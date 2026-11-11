@@ -1,29 +1,69 @@
 [
  {
-  "archivo": "recorrido_1_despejado.json",
-  "clima": "despejado",
-  "ruta": "Rotonda Malecón 72 → Avenida del Río",
-  "duracion_s": 150.0,
+  "archivo": "recorrido_1_malecon_atardecer.json",
+  "via": "Avenida del Río",
+  "hora": 17.2,
+  "lluvia": false,
+  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
+  "duracion_s": 240.0,
+  "choques": 0,
+  "casi_choques": 0,
+  "eventos": 27
+ },
+ {
+  "archivo": "recorrido_2_malecon_dia.json",
+  "via": "Avenida del Río",
+  "hora": 10.0,
+  "lluvia": false,
+  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
+  "duracion_s": 240.0,
+  "choques": 0,
+  "casi_choques": 2,
+  "eventos": 20
+ },
+ {
+  "archivo": "recorrido_3_calle84_lluvia.json",
+  "via": "Calle 84",
+  "hora": 15.0,
+  "lluvia": true,
+  "ruta": "Calle 84",
+  "duracion_s": 240.0,
   "choques": 0,
   "casi_choques": 0,
   "eventos": 10
  },
  {
-  "archivo": "recorrido_2_lluvia.json",
-  "clima": "lluvia",
-  "ruta": "Vía 40",
-  "duracion_s": 85.0,
+  "archivo": "recorrido_4_malecon_noche.json",
+  "via": "Avenida del Río",
+  "hora": 21.0,
+  "lluvia": false,
+  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
+  "duracion_s": 240.0,
   "choques": 0,
   "casi_choques": 1,
-  "eventos": 9
+  "eventos": 30
  },
  {
-  "archivo": "recorrido_3_noche.json",
-  "clima": "noche",
-  "ruta": "Rotonda Malecón 72 → Avenida del Río",
-  "duracion_s": 150.0,
+  "archivo": "recorrido_5_buenavista_noche.json",
+  "via": "Calle 98",
+  "hora": 19.6,
+  "lluvia": false,
+  "ruta": "Calle 98",
+  "duracion_s": 240.0,
   "choques": 0,
-  "casi_choques": 1,
+  "casi_choques": 0,
   "eventos": 10
+ },
+ {
+  "archivo": "recorrido_6_via40_lluvia_choque_iguana.json",
+  "via": "Vía 40",
+  "hora": 14.5,
+  "lluvia": true,
+  "ruta": "Vía 40",
+  "duracion_s": 44.0,
+  "choques": 1,
+  "casi_choques": 1,
+  "eventos": 7,
+  "nota": "ejemplo de falla: iguana detectada tarde con lluvia"
  }
 ]

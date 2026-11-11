@@ -58,6 +58,29 @@ ZONAS = {
 }
 
 
+# Vías que el usuario puede elegir para manejar (nombre en OSM -> descripción)
+VIAS_SELECCIONABLES = {
+    "Avenida del Río": "Gran Malecón del Río (Avenida del Río)",
+    "Vía 40": "Vía 40 (paralela al Malecón)",
+    "Avenida Calle 72": "Avenida Calle 72",
+    "Calle 84": "Calle 84",
+    "Calle 79": "Calle 79",
+    "Calle 76": "Calle 76",
+    "Calle 98": "Calle 98 (Buenavista y Plaza del Parque)",
+    "Carrera 53": "Carrera 53 (Buenavista)",
+    "Carrera 51B": "Carrera 51B",
+    "Avenida Carrera 46": "Avenida Carrera 46 (Olaya Herrera)",
+}
+
+# Si una vía tiene un lugar emblemático, se prefieren las rutas que pasan frente a él
+# (lon, lat): la Calle 98 frente a los Buenavista, el Malecón frente a La Luna del Río.
+PASAR_FRENTE_A = {
+    "Calle 98": (-74.82767, 11.01315),          # C.C. Buenavista
+    "Carrera 53": (-74.82767, 11.01315),
+    "Avenida del Río": (-74.78816, 11.01513),   # La Luna del Río
+}
+
+
 @dataclass
 class RutaEgo:
     aristas: tuple
@@ -192,6 +215,48 @@ class MundoSUMO:
                 if nom and nom not in nombres:
                     nombres.append(nom)
             rutas.append(RutaEgo(tuple(r.edges), r.length, zona, " → ".join(nombres[:4])))
+        self._rutas[clave] = rutas
+        return rutas
+
+    def rutas_por_via(self, via: str, tipo: str = "ego_auto", n: int = 12) -> list[RutaEgo]:
+        """Rutas que recorren sobre todo la vía pedida (≥ 60 % de su longitud), de 0.7 a 4.5 km.
+
+        Se prefieren las que más metros hacen sobre la vía: así el usuario "maneja" por
+        la Vía 40, el Malecón o la Calle 98 de punta a punta y no solo la cruza.
+        """
+        clave = f"via:{via}/{tipo}"
+        if clave in self._rutas:
+            return self._rutas[clave]
+        anclas = self._aristas_calles((via,))
+        rng = random.Random(7 + sum(map(ord, via)))
+        candidatas: dict[tuple, RutaEgo] = {}
+        for _ in range(500):
+            if len(anclas) < 2:
+                break
+            a, b = rng.sample(anclas, 2)
+            r = self.traci.simulation.findRoute(a, b, tipo)
+            if not r.edges or not 700 <= r.length <= 4500:
+                continue
+            en_via = sum(self.largo_carril(f"{e}_0") for e in r.edges if self.traci.edge.getStreetName(e) == via)
+            if en_via < 0.6 * r.length:
+                continue
+            nombres = []
+            for e in r.edges:
+                nom = self.traci.edge.getStreetName(e)
+                if nom and nom not in nombres:
+                    nombres.append(nom)
+            candidatas[tuple(r.edges)] = RutaEgo(tuple(r.edges), r.length, f"vía: {via}",
+                                                 " → ".join(nombres[:4]))
+        rutas = sorted(candidatas.values(), key=lambda r: -r.largo_m)
+        if via in PASAR_FRENTE_A:  # preferir las que pasan a menos de 200 m del lugar emblemático
+            px, py = self.traci.simulation.convertGeo(*PASAR_FRENTE_A[via], fromGeo=True)
+
+            def distancia(r):
+                return min(math.hypot(x - px, y - py) for e in r.aristas
+                           for x, y in self.forma_carril(f"{e}_0"))
+            cerca = [r for r in rutas if distancia(r) < 200.0]
+            rutas = cerca + [r for r in rutas if r not in cerca]
+        rutas = rutas[:n]
         self._rutas[clave] = rutas
         return rutas
 

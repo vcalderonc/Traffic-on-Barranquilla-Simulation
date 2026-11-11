@@ -76,6 +76,25 @@ class PruebaNormalizacion(unittest.TestCase):
         self.assertLess(auto.frenado_max(0.45), auto.frenado_max(0.8))
 
 
+class PruebaHoraDelDia(unittest.TestCase):
+    def test_luminosidad(self):
+        from bq_sim.config import luminosidad
+        self.assertAlmostEqual(luminosidad(12.0), 1.0)
+        self.assertAlmostEqual(luminosidad(2.0), 0.0)
+        self.assertAlmostEqual(luminosidad(22.0), 0.0)
+        self.assertTrue(0.0 < luminosidad(18.2) < 1.0)   # atardecer
+        self.assertTrue(0.0 < luminosidad(6.0) < 1.0)    # amanecer
+
+    def test_clima_dinamico_coincide_con_los_fijos(self):
+        from bq_sim.config import CLIMAS, clima_dinamico
+        dia, noche = clima_dinamico(12.0, False), clima_dinamico(23.0, False)
+        self.assertAlmostEqual(dia.alcance_m, CLIMAS["despejado"].alcance_m)
+        self.assertAlmostEqual(noche.alcance_m, CLIMAS["noche"].alcance_m)
+        self.assertAlmostEqual(clima_dinamico(12.0, True).alcance_m, CLIMAS["lluvia"].alcance_m)
+        self.assertLess(clima_dinamico(23.0, True).alcance_m, noche.alcance_m)  # lluvia de noche: lo peor
+        self.assertEqual(clima_dinamico(12.0, True).mu, CLIMAS["lluvia"].mu)
+
+
 class PruebaGeometria(unittest.TestCase):
     def test_proyeccion_sobre_camino(self):
         camino = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]

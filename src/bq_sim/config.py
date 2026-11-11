@@ -21,12 +21,14 @@ OSM_RED = DATOS_OSM / "barranquilla_malecon.osm.gz"
 RED_SUMO = DIR_SUMO / "barranquilla.net.xml.gz"
 TIPOS_VEH = DIR_SUMO / "vtypes.add.xml"
 RUTAS_FONDO = DIR_SUMO / "trafico_fondo.rou.xml.gz"
+RUTAS_CORREDORES = DIR_SUMO / "corredores.rou.xml"
 PEATONES = DIR_SUMO / "peatones.rou.xml.gz"
 CONFIG_SUMO = DIR_SUMO / "barranquilla.sumocfg"
 
-# Recuadro geográfico (sur, oeste, norte, este): Gran Malecón del Río, Vía 40,
+# Recuadro geográfico (sur, oeste, norte, este): Gran Malecón del Río (de la Ventana de
+# Campeones a la Unidad Funcional 3), Vía 40, Buenavista, Plaza del Parque, Ventana al Mundo,
 # Av. del Río, Av. Calle 72, Calle 76-84, Carreras 50-54.
-BBOX = (10.998, -74.812, 11.030, -74.776)
+BBOX = (10.995, -74.838, 11.036, -74.770)
 
 # Límite urbano en Colombia (Ley 2251 de 2022): 50 km/h salvo señal que indique otro.
 VEL_URBANA_MS = 50 / 3.6
@@ -68,6 +70,50 @@ CLIMAS = {
     "lluvia": Clima("lluvia", mu=0.45, alcance_m=55.0, ruido=2.0, p_omision=0.10),
     "noche": Clima("noche", mu=0.75, alcance_m=45.0, ruido=1.6, p_omision=0.12),
 }
+
+# Hora del día a la que corresponde cada clima "fijo" (para el visor y el modo en vivo)
+HORA_CLIMA = {"despejado": 15.0, "lluvia": 15.0, "noche": 21.5}
+
+
+def luminosidad(hora: float) -> float:
+    """Luz natural de 0 (noche) a 1 (día) en Barranquilla (11° N: amanece ~5:50, oscurece ~18:20).
+
+    Rampas suaves de amanecer (5:20-6:40) y atardecer (17:30-18:50).
+    """
+    import math
+
+    h = hora % 24.0
+
+    def rampa(x, a, b):
+        t = min(1.0, max(0.0, (x - a) / (b - a)))
+        return 0.5 - 0.5 * math.cos(math.pi * t)
+
+    return rampa(h, 5.33, 6.67) * (1.0 - rampa(h, 17.5, 18.83))
+
+
+def clima_dinamico(hora: float, lluvia: bool) -> Clima:
+    """Clima efectivo según la hora (luz) y la lluvia: interpola entre día y noche.
+
+    Coincide con los climas fijos en los extremos: a mediodía sin lluvia es
+    ``despejado``; de noche sin lluvia es ``noche``; a mediodía con lluvia es ``lluvia``.
+    Lluvia de noche suma ambas degradaciones (lo peor de los dos mundos).
+    """
+    luz = luminosidad(hora)
+    dia, noche = CLIMAS["despejado"], CLIMAS["noche"]
+    alcance = noche.alcance_m + luz * (dia.alcance_m - noche.alcance_m)
+    ruido = noche.ruido + luz * (dia.ruido - noche.ruido)
+    p_om = noche.p_omision + luz * (dia.p_omision - noche.p_omision)
+    mu = noche.mu + luz * (dia.mu - noche.mu)
+    nombre = "día" if luz > 0.95 else "noche" if luz < 0.05 else ("amanecer" if hora % 24 < 12 else "atardecer")
+    if lluvia:
+        ll = CLIMAS["lluvia"]
+        alcance *= ll.alcance_m / dia.alcance_m
+        ruido *= ll.ruido / dia.ruido
+        p_om = 1.0 - (1.0 - p_om) * (1.0 - ll.p_omision)
+        mu = ll.mu
+        nombre = f"lluvia ({nombre})"
+    return Clima(nombre, mu=round(mu, 3), alcance_m=round(alcance, 1), ruido=round(ruido, 3),
+                 p_omision=round(p_om, 3))
 
 
 @dataclass

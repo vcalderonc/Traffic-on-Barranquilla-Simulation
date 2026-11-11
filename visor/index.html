@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Malecón 3D · Simulación multiagente</title>
+<title>Barranquilla 3D · Simulación multiagente</title>
 <style>
   :root {
-    --panel: rgba(14, 20, 28, 0.78);
+    --panel: rgba(14, 20, 28, 0.80);
     --borde: rgba(255, 255, 255, 0.12);
     --texto: #e9eef3;
     --suave: #9fb0bf;
     --acento: #ffb000;
     --rojo: #ff4d4d;
     --verde: #38d07a;
-    --ambar: #ffc233;
-    --azul: #4fb3ff;
+    --rosa: #ff9cc6;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: #0d1117; color: var(--texto);
@@ -22,76 +21,101 @@
   #lienzo { position: fixed; inset: 0; }
   .panel { position: fixed; background: var(--panel); border: 1px solid var(--borde);
     border-radius: 10px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  #titulo { top: 12px; left: 12px; padding: 10px 14px; max-width: 360px; }
-  #titulo h1 { margin: 0; font-size: 15px; letter-spacing: .2px; }
+  #titulo { top: 12px; left: 12px; padding: 10px 12px; width: 340px; }
+  #titulo h1 { margin: 0; font-size: 15px; }
   #titulo .sub { color: var(--suave); font-size: 12px; margin-top: 2px; }
-  #titulo select { margin-top: 8px; width: 100%; background: #0b1016; color: var(--texto);
-    border: 1px solid var(--borde); border-radius: 6px; padding: 5px; }
-  #ego { top: 12px; right: 12px; width: 330px; padding: 12px 14px; }
+  .pestanas { display: flex; gap: 4px; margin-top: 8px; }
+  .pestanas button { flex: 1; }
+  .modo { margin-top: 8px; display: grid; gap: 6px; }
+  .modo[hidden] { display: none; }
+  label.campo { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 6px; color: var(--suave); font-size: 12px; }
+  select, input[type=range] { width: 100%; }
+  select { background: #0b1016; color: var(--texto); border: 1px solid var(--borde); border-radius: 6px; padding: 5px; font: inherit; }
+  .chk { display: inline-flex; align-items: center; gap: 5px; color: var(--suave); font-size: 12px; margin-right: 10px; }
+  #estadoVivo { font-size: 12px; color: var(--suave); min-height: 16px; }
+  #ego { top: 12px; right: 12px; width: 330px; padding: 12px 14px; max-height: calc(100vh - 150px); overflow: auto; }
   .fila { display: flex; align-items: center; gap: 12px; }
   .vel { font-size: 38px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
   .vel small { font-size: 13px; color: var(--suave); font-weight: 400; }
   .limite { width: 44px; height: 44px; border-radius: 50%; border: 5px solid #e33; background: #fff;
-    color: #111; display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+    color: #111; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: none; }
   .senal { margin-left: auto; text-align: center; font-size: 11px; color: var(--suave); min-width: 64px; }
-  .semaforo { display: inline-flex; flex-direction: column; gap: 3px; background: #111; padding: 4px;
-    border-radius: 6px; }
+  .semaforo { display: inline-flex; flex-direction: column; gap: 3px; background: #111; padding: 4px; border-radius: 6px; }
   .semaforo i { width: 11px; height: 11px; border-radius: 50%; background: #333; display: block; }
   .pare { width: 40px; height: 40px; background: #d22; color: #fff; font-weight: 800; font-size: 10px;
     display: grid; place-items: center; clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); }
+  #ambienteTxt { color: var(--suave); font-size: 12px; margin-top: 6px; }
   h3 { margin: 12px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--suave); }
   .agentes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-  .ag { border: 1px solid var(--borde); border-radius: 7px; padding: 5px 6px; font-size: 11px;
-    color: var(--suave); transition: all .2s; min-height: 34px; }
+  .ag { border: 1px solid var(--borde); border-radius: 7px; padding: 5px 6px; font-size: 11px; color: var(--suave); min-height: 34px; }
   .ag b { display: block; color: var(--texto); font-size: 11.5px; }
   .ag.activo { border-color: var(--acento); background: rgba(255, 176, 0, .16); color: #ffe3a3; }
   .ag.activo b { color: var(--acento); }
   .ag.alerta { border-color: var(--rojo); background: rgba(255, 77, 77, .18); }
   .ag.alerta b { color: var(--rojo); }
-  #motivo { margin-top: 8px; padding: 7px 9px; border-radius: 7px; background: rgba(255,255,255,.05);
-    min-height: 34px; font-size: 12px; }
+  #motivo { margin-top: 8px; padding: 7px 9px; border-radius: 7px; background: rgba(255,255,255,.05); min-height: 34px; font-size: 12px; }
   #accion { font-weight: 600; }
-  .det { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 2px 8px; font-size: 12px;
-    font-variant-numeric: tabular-nums; }
+  .det { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 2px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
   .det .tray { color: var(--rojo); font-weight: 600; }
   .metricas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
   .met { text-align: center; background: rgba(255,255,255,.04); border-radius: 6px; padding: 4px 2px; }
   .met b { display: block; font-size: 16px; }
   .met span { font-size: 10px; color: var(--suave); }
-  #controles { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(820px, calc(100% - 24px));
-    padding: 9px 12px; }
+  #controles { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(900px, calc(100% - 24px)); padding: 9px 12px; }
   #controles .fila { gap: 8px; }
-  button, .btn { background: rgba(255,255,255,.07); border: 1px solid var(--borde); color: var(--texto);
+  button { background: rgba(255,255,255,.07); border: 1px solid var(--borde); color: var(--texto);
     border-radius: 7px; padding: 6px 10px; cursor: pointer; font: inherit; white-space: nowrap; }
   button:hover { background: rgba(255,255,255,.14); }
   button.on { border-color: var(--acento); color: var(--acento); }
+  button.primario { background: var(--acento); color: #1a1200; border-color: var(--acento); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
   #linea { position: relative; flex: 1; height: 26px; }
   #barra { width: 100%; margin: 0; position: absolute; top: 4px; }
   #marcas { position: absolute; left: 0; right: 0; top: 18px; height: 8px; pointer-events: none; }
   #marcas i { position: absolute; width: 3px; height: 8px; border-radius: 2px; transform: translateX(-1px); }
   #reloj { font-variant-numeric: tabular-nums; color: var(--suave); min-width: 86px; text-align: right; }
-  #leyenda { left: 12px; top: 112px; max-width: 360px; padding: 8px 10px; font-size: 11px; color: var(--suave); }
+  #horaTxt { font-variant-numeric: tabular-nums; min-width: 44px; color: var(--rosa); font-weight: 600; }
+  #leyenda { left: 12px; bottom: 12px; padding: 8px 10px; font-size: 11px; color: var(--suave); max-width: 340px; }
   #leyenda span { display: inline-flex; align-items: center; gap: 5px; margin-right: 10px; }
   #leyenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
   #carga { position: fixed; inset: 0; display: grid; place-items: center; background: #0d1117; z-index: 9;
-    font-size: 15px; color: var(--suave); text-align: center; }
+    font-size: 15px; color: var(--suave); text-align: center; padding: 20px; }
   #carga b { color: var(--texto); font-size: 18px; display: block; margin-bottom: 6px; }
+  @media (max-width: 1100px) { #leyenda { display: none; } }
   @media (max-width: 900px) {
-    #ego { width: auto; left: 12px; top: auto; bottom: 86px; max-height: 42vh; overflow: auto; }
-    #titulo { right: 12px; max-width: none; }
-    #leyenda { display: none; }
+    #ego { width: auto; left: 12px; top: auto; bottom: 150px; max-height: 34vh; }
+    #titulo { right: 12px; width: auto; }
   }
 </style>
 </head>
 <body>
 <canvas id="lienzo"></canvas>
 
-<div id="carga"><div><b>Gran Malecón del Río · Barranquilla</b><span id="cargaTxt">Cargando la ciudad…</span></div></div>
+<div id="carga"><div><b>Barranquilla · Gran Malecón del Río</b><span id="cargaTxt">Cargando la ciudad…</span></div></div>
 
 <div id="titulo" class="panel">
-  <h1>Simulación multiagente · Gran Malecón</h1>
-  <div class="sub" id="subtitulo">Barranquilla, Colombia · red vial real de OpenStreetMap + SUMO</div>
-  <select id="recorrido" aria-label="Recorrido grabado"></select>
+  <h1>Simulación multiagente · Barranquilla</h1>
+  <div class="sub" id="subtitulo">Red vial real de OpenStreetMap + SUMO</div>
+  <div class="pestanas">
+    <button id="tabGrabados" class="on">Recorridos grabados</button>
+    <button id="tabVivo" disabled title="Ejecute: python -m bq_sim vivo">Simulación en vivo</button>
+  </div>
+  <div class="modo" id="modoGrabados">
+    <select id="recorrido" aria-label="Recorrido grabado"></select>
+  </div>
+  <div class="modo" id="modoVivo" hidden>
+    <label class="campo">Vía <select id="viaVivo"></select></label>
+    <label class="campo">Conductor <select id="agenteVivo"></select></label>
+    <label class="campo">Velocidad
+      <select id="velVivo"><option value="1">tiempo real</option><option value="2">2×</option><option value="4">4×</option></select>
+    </label>
+    <div><label class="chk"><input type="checkbox" id="guardVivo" checked> guardrail de Seguridad</label></div>
+    <div class="fila" style="gap:6px">
+      <button class="primario" id="btnConducir">▶ Conducir</button>
+      <button id="btnDetener" disabled>■ Detener</button>
+    </div>
+    <div id="estadoVivo">La hora, la lluvia y el ciclo se toman del panel de ambiente (abajo).</div>
+  </div>
 </div>
 
 <div id="ego" class="panel">
@@ -101,7 +125,8 @@
     <div class="senal" id="senal"></div>
   </div>
   <div style="margin-top:8px"><span style="color:var(--suave)">Acción:</span> <span id="accion">—</span></div>
-  <h3>Agentes del vehículo instructor</h3>
+  <div id="ambienteTxt">—</div>
+  <h3>Agentes del vehículo</h3>
   <div class="agentes">
     <div class="ag" data-ag="percepcion"><b>Percepción</b><span>sensores</span></div>
     <div class="ag" data-ag="senales"><b>Señales</b><span>—</span></div>
@@ -125,7 +150,7 @@
 <div id="controles" class="panel">
   <div class="fila">
     <button id="play" aria-label="Reproducir o pausar">⏸</button>
-    <select id="velocidad" class="btn" aria-label="Velocidad de reproducción">
+    <select id="velocidad" aria-label="Velocidad de reproducción" style="width:auto">
       <option value="0.5">0.5×</option><option value="1" selected>1×</option>
       <option value="2">2×</option><option value="4">4×</option>
     </select>
@@ -133,17 +158,27 @@
     <span id="reloj">0.0 s</span>
   </div>
   <div class="fila" style="margin-top:7px; flex-wrap: wrap">
-    <button data-cam="seguir" class="on">Seguir al instructor</button>
-    <button data-cam="malecon">Vista del Malecón</button>
+    <span style="color:var(--suave)">Hora</span>
+    <input type="range" id="hora" min="0" max="24" step="0.05" value="17.5" style="width:170px" aria-label="Hora del día">
+    <span id="horaTxt">17:30</span>
+    <label class="chk"><input type="checkbox" id="ciclo"> ciclo día-noche</label>
+    <label class="chk"><input type="checkbox" id="lluvia"> lluvia</label>
+    <label class="chk" title="Usar la hora y la lluvia de la simulación"><input type="checkbox" id="sincro" checked> hora de la simulación</label>
+  </div>
+  <div class="fila" style="margin-top:7px; flex-wrap: wrap">
+    <button data-cam="seguir" class="on">Seguir al vehículo</button>
+    <button data-cam="malecon">Malecón</button>
+    <button data-cam="buenavista">Buenavista</button>
     <button data-cam="cenital">Cenital</button>
     <button data-cam="libre">Libre</button>
     <button id="btnSensores" class="on">Sensores</button>
-    <button id="btnEtiquetas" class="on">Nombres de vías</button>
+    <button id="btnEtiquetas" class="on">Nombres</button>
+    <button id="btnPaneles" title="Tecla H">Ocultar paneles (H)</button>
   </div>
 </div>
 
 <div id="leyenda" class="panel">
-  <span><i style="background:#ffb000"></i>instructor</span>
+  <span><i style="background:#ffb000"></i>vehículo autónomo</span>
   <span><i style="background:#ffd600"></i>taxi</span>
   <span><i style="background:#18a058"></i>bus</span>
   <span><i style="background:#e04f8a"></i>peatón</span>

@@ -3,15 +3,16 @@
 Comandos
   red            descarga OSM (opcional --descargar) y construye la red SUMO con PARE
   demanda        genera tráfico de fondo y peatones
-  instructor     E1: entrena el vehículo instructor
+  instructor     E1: entrena el vehículo instructor (--continuar: sigue entrenando el guardado)
   aprendices     E2/E3: aprendices con y sin instructor
   bus            E4: normalización del conocimiento automóvil -> bus
   federado       E5: flota federada (FedAvg) y solo local
   cruzada        E5: evaluación cruzada de los modelos de la flota
   comparacion    E6: reglas vs DQN vs DQN+guardrail por clima
   graficas       genera las figuras de salidas/ a partir de los CSV
-  visor          exporta la ciudad y graba un recorrido para el visor 3D del Malecón
-  gui            abre sumo-gui con el vehículo instructor conduciendo
+  visor          exporta la ciudad y graba recorridos para el visor 3D
+  vivo           simulación en vivo en el navegador: el usuario elige vía, hora, lluvia y conductor
+  gui            abre sumo-gui con el instructor conduciendo por la vía elegida
 """
 from __future__ import annotations
 
@@ -29,7 +30,10 @@ def main(argv=None) -> None:
     r.add_argument("--descargar", action="store_true", help="vuelve a descargar OSM con Overpass")
     sub.add_parser("demanda")
     e1 = sub.add_parser("instructor")
-    e1.add_argument("--episodios", type=int, default=400)
+    e1.add_argument("--episodios", type=int, default=None,
+                    help="400 al entrenar desde cero; 100 con --continuar")
+    e1.add_argument("--continuar", action="store_true",
+                    help="carga el instructor guardado y lo sigue entrenando (acumulativo)")
     e23 = sub.add_parser("aprendices")
     e23.add_argument("--episodios", type=int, default=50)
     e4 = sub.add_parser("bus")
@@ -45,10 +49,14 @@ def main(argv=None) -> None:
     sub.add_parser("graficas")
     v = sub.add_parser("visor")
     v.add_argument("--solo-ciudad", action="store_true")
-    v.add_argument("--duracion", type=float, default=150.0)
+    v.add_argument("--duracion", type=float, default=240.0)
+    vv = sub.add_parser("vivo")
+    vv.add_argument("--puerto", type=int, default=8000)
     g = sub.add_parser("gui")
-    g.add_argument("--zona", default="malecon_via40")
-    g.add_argument("--clima", default="despejado")
+    g.add_argument("--via", default="Avenida del Río", help='p. ej. "Vía 40", "Calle 98", "Avenida Calle 72"')
+    g.add_argument("--hora", type=float, default=17.5, help="hora del día (0-24), p. ej. 17.8 para el atardecer")
+    g.add_argument("--lluvia", action="store_true")
+    g.add_argument("--ciclo", type=float, default=0.0, help="minutos de día por segundo simulado (0 = hora fija)")
     a = p.parse_args(argv)
 
     if a.cmd == "red":
@@ -64,7 +72,10 @@ def main(argv=None) -> None:
         demanda.generar_demanda()
     elif a.cmd == "instructor":
         from . import experimentos as X
-        X.e1_instructor(a.episodios)
+        if a.continuar:
+            X.e1_continuar(a.episodios or 100)
+        else:
+            X.e1_instructor(a.episodios or 400)
     elif a.cmd == "aprendices":
         from . import experimentos as X
         X.e23_aprendices(a.episodios)
@@ -88,9 +99,12 @@ def main(argv=None) -> None:
         visor.exportar_ciudad()
         if not a.solo_ciudad:
             visor.grabar_recorrido(duracion_s=a.duracion)
+    elif a.cmd == "vivo":
+        from . import servidor
+        servidor.servir(a.puerto)
     elif a.cmd == "gui":
         from . import visor
-        visor.abrir_gui(a.zona, a.clima)
+        visor.abrir_gui(a.via, a.hora, a.lluvia, a.ciclo)
 
 
 if __name__ == "__main__":

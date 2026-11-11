@@ -197,7 +197,11 @@ def exportar_ciudad() -> dict:
                 pts.append((x, y))
         return pts
 
+    hitos = json.loads((C.RAIZ / "data" / "hitos.json").read_text(encoding="utf-8"))["hitos"]
+    ids_hitos = {str(h["osm"]["id"]) for h in hitos if h["osm"]["tipo"] == "way"} | {"685753639", "744671556"}
     for wid, (refs, tags) in vias.items():
+        if wid in ids_hitos:
+            continue  # los lugares emblemáticos se modelan aparte
         if "building" in tags and len(refs) >= 4:
             p = xy(refs[:-1] if refs[0] == refs[-1] else refs)
             if len(p) < 3 or not all(caja[0] < x < caja[2] and caja[1] < y < caja[3] for x, y in p):
@@ -247,11 +251,95 @@ def exportar_ciudad() -> dict:
                     cx = sum(x for x, _ in p) / len(p)
                     cy = sum(y for _, y in p) / len(p)
                     ciudad["etiquetas"].append(["agua", tags["name"], R(cx - ox), R(cy - oy)])
+    ciudad["hitos"] = _exportar_hitos(red, hitos, ox, oy)
+    ciudad["faroles"] = _faroles(red, ox, oy)
     DIR_DATOS.mkdir(parents=True, exist_ok=True)
     (DIR_DATOS / "ciudad.json").write_text(json.dumps(ciudad, separators=(",", ":"), ensure_ascii=False),
                                            encoding="utf-8")
     print({k: len(v) for k, v in ciudad.items() if isinstance(v, list)})
     return ciudad
+
+
+VIAS_ILUMINADAS = ("Avenida del Río", "Vía 40", "Avenida Calle 72", "Calle 98", "Calle 99", "Carrera 53",
+                   "Calle 84", "Avenida Carrera 46", "Carrera 51B", "Calle 79", "Calle 76", "Rotonda Malecón 72")
+
+
+def _faroles(red, ox, oy, cada_m: float = 32.0) -> list:
+    """Postes de alumbrado a la derecha de cada sentido de las vías principales."""
+    out = []
+    for e in red.getEdges():
+        if e.getName() not in VIAS_ILUMINADAS or not e.allows("passenger"):
+            continue
+        forma = e.getShape()
+        ancho = sum(ln.getWidth() for ln in e.getLanes()) / 2 + 1.2
+        acumulado, siguiente = 0.0, cada_m / 2
+        for (x1, y1), (x2, y2) in zip(forma[:-1], forma[1:]):
+            seg = math.hypot(x2 - x1, y2 - y1)
+            if seg < 1e-6:
+                continue
+            nx, ny = (y2 - y1) / seg, -(x2 - x1) / seg  # normal a la derecha
+            while siguiente <= acumulado + seg:
+                f = (siguiente - acumulado) / seg
+                x, y = x1 + f * (x2 - x1) + nx * ancho, y1 + f * (y2 - y1) + ny * ancho
+                out.append([R(x - ox), R(y - oy), round(math.atan2(-ny, -nx), 2)])  # el brazo mira a la vía
+                siguiente += cada_m
+            acumulado += seg
+    return out
+
+
+def _exportar_hitos(red, hitos: list, ox, oy) -> list:
+    """Lugares emblemáticos en coordenadas locales, con orientación y fachada de pantalla."""
+    def rumbo_via(x, y, nombres=("Avenida del Río", "Vía 40")):
+        mejor = (1e18, 0.0)
+        for e in red.getEdges():
+            if e.getName() not in nombres:
+                continue
+            for (x1, y1), (x2, y2) in zip(e.getShape()[:-1], e.getShape()[1:]):
+                mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+                d = (mx - x) ** 2 + (my - y) ** 2
+                if d < mejor[0]:
+                    mejor = (d, math.atan2(y2 - y1, x2 - x1))
+        return mejor[1]
+
+    def punto_via_cercano(x, y, nombres):
+        mejor = (1e18, (x, y))
+        for e in red.getEdges():
+            if e.getName() not in nombres:
+                continue
+            for px, py in e.getShape():
+                d = (px - x) ** 2 + (py - y) ** 2
+                if d < mejor[0]:
+                    mejor = (d, (px, py))
+        return mejor[1]
+
+    out = []
+    for h in hitos:
+        item = {"id": h["id"], "tipo": h["tipo"], "nombre": h["nombre"], "altura": h.get("altura_m", 10.0)}
+        if "punto" in h:
+            x, y = red.convertLonLat2XY(*h["punto"])
+            item["x"], item["y"] = R(x - ox), R(y - oy)
+            item["rumbo"] = round(rumbo_via(x, y), 3)
+        if "poligono" in h:
+            pts = [red.convertLonLat2XY(lon, lat) for lon, lat in h["poligono"]]
+            if pts[0] == pts[-1]:
+                pts = pts[:-1]
+            item["poligono"] = _plano([(x - ox, y - oy) for x, y in pts])
+            cx = sum(x for x, _ in pts) / len(pts)
+            cy = sum(y for _, y in pts) / len(pts)
+            item["x"], item["y"] = R(cx - ox), R(cy - oy)
+            if h["tipo"] == "mall":
+                # fachada más cercana a la vía principal: ahí va la pantalla gigante y el letrero
+                vx, vy = punto_via_cercano(cx, cy, ("Calle 98", "Carrera 53", "Calle 99", "Carrera 54"))
+                lados = []
+                for i in range(len(pts)):
+                    (x1, y1), (x2, y2) = pts[i], pts[(i + 1) % len(pts)]
+                    largo = math.hypot(x2 - x1, y2 - y1)
+                    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+                    lados.append((math.hypot(mx - vx, my - vy) - 0.3 * largo, (x1, y1, x2, y2)))
+                x1, y1, x2, y2 = min(lados)[1]
+                item["fachada"] = [R(x1 - ox), R(y1 - oy), R(x2 - ox), R(y2 - oy)]
+        out.append(item)
+    return out
 
 
 def _sembrar_palmeras(p, ciudad, ox, oy, semilla: str, malecon: bool) -> None:
@@ -276,12 +364,16 @@ TIPOS_VISOR = {"auto": 0, "taxi": 1, "moto": 2, "bus": 3, "camion": 4}
 
 
 class Grabadora:
-    """Captura cuadros a 2 Hz durante un episodio para reproducirlos en el visor."""
+    """Arma cuadros (2 Hz) del episodio: los guarda para el visor o se los pasa a quien
+    los transmite en vivo (``al_cuadro``)."""
 
-    def __init__(self, origen, radio_m: float = 650.0, cada_pasos: int = 2):
+    def __init__(self, origen, radio_m: float = 650.0, cada_pasos: int = 2, guardar: bool = True,
+                 al_cuadro=None):
         self.ox, self.oy = origen
         self.radio = radio_m
         self.cada = cada_pasos
+        self.guardar = guardar
+        self.al_cuadro = al_cuadro
         self.cuadros: list = []
         self.episodios: list = []
         self._n = 0
@@ -295,14 +387,11 @@ class Grabadora:
     def inicio_episodio(self, env, info) -> None:
         self.episodios.append({"inicio": len(self.cuadros), "t0": round(env.t0, 2), **info})
 
-    def paso(self, env, d, recompensa) -> None:
-        self._n += 1
-        if self._n % self.cada:
-            return
+    def cuadro(self, env, d) -> dict | None:
         tr = env.mundo.traci
         mm = env.veh.mm
         if mm is None:
-            return
+            return None
         ex, ey = mm.x, mm.y
         vehs = []
         for vid in tr.vehicle.getIDList():
@@ -331,8 +420,8 @@ class Grabadora:
             det.append([o.subtipo, round(o.s, 1), round(min(o.ttc, 99), 1), int(o.en_trayectoria),
                         R(o.x - self.ox), R(o.y - self.oy)])
         sen = mm.senal
-        self.cuadros.append({
-            "t": round(env.mundo.t - env.t0, 2),
+        return {
+            "t": round(env.mundo.t - env.t0, 2), "h": round(env.hora, 3), "ll": int(env.lluvia),
             "v": vehs, "p": personas, "o": objetos, "s": semaforos,
             "ego": {
                 "id": self._id(env.ego), "kmh": round(mm.v * 3.6, 1), "lim": round(mm.v_lim * 3.6),
@@ -342,8 +431,21 @@ class Grabadora:
                 "r": round(met.recompensa, 2), "choques": met.choques, "casi": met.casi_choques,
                 "bruscas": met.frenadas_bruscas, "pare": met.pare_respetados, "pare_mal": met.pare_violados,
                 "rojos": met.rojos_violados, "dist": round(met.distancia_m), "carril": mm.carril_idx,
+                "clima": mm.clima.nombre, "alcance": mm.clima.alcance_m,
             },
-        })
+        }
+
+    def paso(self, env, d, recompensa) -> None:
+        self._n += 1
+        if self._n % self.cada:
+            return
+        c = self.cuadro(env, d)
+        if c is None:
+            return
+        if self.guardar:
+            self.cuadros.append(c)
+        if self.al_cuadro is not None:
+            self.al_cuadro(c)
 
     def fin_episodio(self, env) -> None:
         self.episodios[-1]["fin"] = len(self.cuadros)
@@ -351,32 +453,63 @@ class Grabadora:
         self.episodios[-1]["eventos"] = env.eval.met.eventos + env.eventos.registro
 
 
-def _ruta_malecon(env, preferida="Avenida del Río"):
-    rutas = env.mundo.rutas_zona("malecon_via40")
-    tr = env.mundo.traci
+# Recorridos grabados para el visor: (archivo, vía, hora inicial, lluvia, minutos de día por s, semilla)
+RECORRIDOS = (
+    ("recorrido_1_malecon_atardecer", "Avenida del Río", 17.2, False, 0.6, 201),
+    ("recorrido_2_malecon_dia", "Avenida del Río", 10.0, False, 0.0, 202),
+    ("recorrido_3_calle84_lluvia", "Calle 84", 15.0, True, 0.0, 207),
+    ("recorrido_4_malecon_noche", "Avenida del Río", 21.0, False, 0.0, 204),
+    ("recorrido_5_buenavista_noche", "Calle 98", 19.6, False, 0.0, 205),
+)
 
-    def en_pref(r):
-        return sum(env.mundo.largo_carril(f"{e}_0") for e in r.aristas if tr.edge.getStreetName(e) == preferida)
-    return max(rutas, key=en_pref)
+
+def _ruta_para_grabar(mundo, via: str, avance_ideal_m: float = 1000.0):
+    """La ruta más larga, salvo que la vía tenga un lugar emblemático: entonces la ruta que
+    pasa frente a él a ~1 km del inicio, para que se vea dentro de los 4 minutos grabados."""
+    from .entorno.mundo import PASAR_FRENTE_A
+
+    rutas = mundo.rutas_por_via(via)
+    if via not in PASAR_FRENTE_A:
+        return rutas[0]
+    px, py = mundo.traci.simulation.convertGeo(*PASAR_FRENTE_A[via], fromGeo=True)
+
+    def acercamiento(r):
+        acumulado, mejor = 0.0, (1e18, 0.0)
+        for e in r.aristas:
+            d = min(math.hypot(x - px, y - py) for x, y in mundo.forma_carril(f"{e}_0"))
+            if d < mejor[0]:
+                mejor = (d, acumulado)
+            acumulado += mundo.largo_carril(f"{e}_0")
+        return mejor
+
+    medidas = [(acercamiento(r), r) for r in rutas]
+    cerca = [(abs(avance - avance_ideal_m), r) for (d, avance), r in medidas if d < 200.0]
+    return min(cerca, key=lambda t: t[0])[1] if cerca else rutas[0]
 
 
-def grabar_recorrido(duracion_s: float = 150.0, climas=("despejado", "lluvia", "noche")) -> None:
-    """Graba recorridos del instructor (con guardrail) por el Malecón, uno por clima."""
+def grabar_recorrido(duracion_s: float = 240.0, recorridos=RECORRIDOS, solo: list[str] | None = None) -> None:
+    """Graba recorridos del instructor (con guardrail) por vías reales a distintas horas.
+
+    ``solo`` = nombres a regrabar; los demás archivos y su entrada en el índice se conservan.
+    """
     from .aprendizaje.dqn import AgenteDQN
     from .entorno.gym_env import ConduccionBarranquillaEnv
     from .experimentos import MODELO_INSTRUCTOR
 
     ciudad = json.loads((DIR_DATOS / "ciudad.json").read_text(encoding="utf-8"))
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR) if MODELO_INSTRUCTOR.exists() else (None, None)
-    indice = []
-    for i, clima in enumerate(climas):
+    ruta_indice = DIR_DATOS / "recorridos.json"
+    previos = json.loads(ruta_indice.read_text(encoding="utf-8")) if ruta_indice.exists() else []
+    indice = {r["archivo"]: r for r in previos if (DIR_DATOS / r["archivo"]).exists()}
+    for (nombre, via, hora, lluvia, ciclo, semilla) in recorridos:
+        if solo and nombre not in solo:
+            continue
         grab = Grabadora(ciudad["origen"])
-        env = ConduccionBarranquillaEnv(semilla=101 + i, guardrail=True, zonas=["malecon_via40"],
-                                        multiplicador_eventos=2.2, t_max_s=duracion_s, grabadora=grab)
-        ruta = _ruta_malecon(env, "Avenida del Río" if i != 1 else "Vía 40")
-        env.mundo._rutas["malecon_via40/ego_auto"] = [ruta]
+        env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=True, multiplicador_eventos=2.0,
+                                        t_max_s=duracion_s, grabadora=grab)
         try:
-            obs, _ = env.reset(options={"zona": "malecon_via40", "clima": clima})
+            env.mundo._rutas[f"via:{via}/ego_auto"] = [_ruta_para_grabar(env.mundo, via)]
+            obs, _ = env.reset(options={"via": via, "hora": hora, "lluvia": lluvia, "ciclo_min_por_s": ciclo})
             fin = False
             while not fin:
                 a = maestro.actuar(obs, explorar=False) if maestro else None
@@ -384,33 +517,34 @@ def grabar_recorrido(duracion_s: float = 150.0, climas=("despejado", "lluvia", "
                 fin = term or trunc
         finally:
             env.close()
-        nombre = f"recorrido_{i + 1}_{clima}.json"
-        datos = {"clima": clima, "ids": len(grab._ids), "episodios": grab.episodios, "cuadros": grab.cuadros,
-                 "dt": C.PASO_SIM_S * grab.cada}
-        (DIR_DATOS / nombre).write_text(json.dumps(datos, separators=(",", ":"), ensure_ascii=False),
-                                        encoding="utf-8")
+        archivo = f"{nombre}.json"
+        datos = {"via": via, "hora": hora, "lluvia": lluvia, "ids": len(grab._ids),
+                 "episodios": grab.episodios, "cuadros": grab.cuadros, "dt": C.PASO_SIM_S * grab.cada}
+        (DIR_DATOS / archivo).write_text(json.dumps(datos, separators=(",", ":"), ensure_ascii=False),
+                                         encoding="utf-8")
         m = grab.episodios[0].get("metricas", {})
-        indice.append({"archivo": nombre, "clima": clima, "ruta": grab.episodios[0].get("ruta", ""),
-                       "duracion_s": round(len(grab.cuadros) * datos["dt"], 1),
-                       "choques": m.get("choques"), "casi_choques": m.get("casi_choques"),
-                       "eventos": len(grab.episodios[0].get("eventos", []))})
-        print(nombre, len(grab.cuadros), "cuadros", m)
-    (DIR_DATOS / "recorridos.json").write_text(json.dumps(indice, indent=1, ensure_ascii=False), encoding="utf-8")
+        indice[archivo] = {"archivo": archivo, "via": via, "hora": hora, "lluvia": lluvia,
+                           "ruta": grab.episodios[0].get("ruta", ""),
+                           "duracion_s": round(len(grab.cuadros) * datos["dt"], 1),
+                           "choques": m.get("choques"), "casi_choques": m.get("casi_choques"),
+                           "eventos": len(grab.episodios[0].get("eventos", []))}
+        print(archivo, len(grab.cuadros), "cuadros", m, flush=True)
+    ruta_indice.write_text(json.dumps(sorted(indice.values(), key=lambda r: r["archivo"]), indent=1,
+                                      ensure_ascii=False), encoding="utf-8")
 
 
-def abrir_gui(zona: str = "malecon_via40", clima: str = "despejado") -> None:
-    """Abre sumo-gui y deja al instructor conduciendo episodio tras episodio."""
+def abrir_gui(via: str = "Avenida del Río", hora: float = 17.5, lluvia: bool = False, ciclo: float = 0.0) -> None:
+    """Abre sumo-gui y deja al instructor conduciendo por la vía elegida, episodio tras episodio."""
     from .aprendizaje.dqn import AgenteDQN
     from .entorno.gym_env import ConduccionBarranquillaEnv
     from .experimentos import MODELO_INSTRUCTOR
 
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
-    env = ConduccionBarranquillaEnv(semilla=5, gui=True, zonas=[zona], climas=[clima],
-                                    multiplicador_eventos=2.0)
+    env = ConduccionBarranquillaEnv(semilla=5, gui=True, multiplicador_eventos=2.0, t_max_s=300.0)
     tr = env.mundo.traci
     try:
         while True:
-            obs, info = env.reset()
+            obs, info = env.reset(options={"via": via, "hora": hora, "lluvia": lluvia, "ciclo_min_por_s": ciclo})
             print("Episodio:", info)
             try:
                 tr.gui.trackVehicle("View #0", env.ego)
@@ -422,6 +556,7 @@ def abrir_gui(zona: str = "malecon_via40", clima: str = "despejado") -> None:
                 obs, _r, term, trunc, inf = env.step(maestro.actuar(obs, explorar=False))
                 fin = term or trunc
             print("Resultado:", {k: inf["metricas"][k] for k in ("choques", "casi_choques", "llego", "recompensa")})
+            hora = env.hora
     except Exception as ex:  # cerrar la ventana termina la conexión
         print("Fin:", ex)
     finally:

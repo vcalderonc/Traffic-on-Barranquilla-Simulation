@@ -58,6 +58,39 @@ def e1_instructor(episodios: int = 400, semilla: int = 7, demostraciones: int = 
         env.close()
 
 
+def e1_continuar(episodios: int = 100, semilla: int | None = None) -> None:
+    """Entrenamiento acumulativo: carga el instructor guardado y lo sigue entrenando.
+
+    Cada corrida suma ``episodios`` a su experiencia (exploración baja, ancla 0.25 a las
+    reglas) y deja una copia del modelo anterior en ``modelos/respaldo/``. Las métricas
+    van a ``salidas/e1_continuacion_<n>.csv``.
+    """
+    import shutil
+
+    maestro, meta = AgenteDQN.cargar(MODELO_INSTRUCTOR)
+    previos = int(meta.get("episodios", 0))
+    semilla = semilla if semilla is not None else 1000 + previos
+    respaldo = C.DIR_MODELOS / "respaldo"
+    respaldo.mkdir(parents=True, exist_ok=True)
+    shutil.copy(MODELO_INSTRUCTOR, respaldo / f"instructor_{previos}_episodios.npz")
+    ag = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_inicial=0.10, eps_final=0.02, eps_pasos=10_000), semilla=semilla)
+    ag.fijar_parametros(maestro.obtener_parametros())
+    n = len(list(C.DIR_SALIDAS.glob("e1_continuacion_*.csv"))) + 1
+    env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=False, multiplicador_eventos=1.2)
+    reg = Registro(C.DIR_SALIDAS / f"e1_continuacion_{n}.csv")
+    t0 = time.time()
+    try:
+        entrenar(env, ag, episodios, reg, f"continuacion_{n}", demostraciones_reglas=1, inicio=previos,
+                 evaluar_cada=50, opciones_eval=_opciones_fijas(999, 5), episodios_eval=5)
+    finally:
+        reg.cerrar()
+        ag.guardar(MODELO_INSTRUCTOR, {"perfil": "automovil", "episodios": previos + episodios,
+                                       "continuaciones": n, "minutos": round((time.time() - t0) / 60, 1)})
+        env.close()
+    print(f"Instructor guardado con {previos + episodios} episodios de experiencia "
+          f"(respaldo del anterior en {respaldo}).")
+
+
 # ---------------------------------------------------------------- E2/E3
 def e23_aprendices(episodios: int = 50, semillas=(21, 22), perfil: str = "taxi") -> None:
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
@@ -188,6 +221,29 @@ def e6_comparacion(episodios: int = 10, semilla: int = 61) -> None:
                         opciones=_opciones_fijas(semilla, episodios, climas=[clima]))
             finally:
                 env.close()
+    reg.cerrar()
+
+
+# ------------------------------------------------------------------- E7
+def e7_red_ampliada(episodios: int = 12, semilla: int = 71) -> None:
+    """Validación en la red ampliada (Buenavista, Calle 98, Ventana al Mundo) con flujos de
+    corredor: el instructor (con y sin guardrail) frente al conductor de reglas, sobre vías
+    elegidas al azar entre las seleccionables y a horas del día, atardecer y noche, con lluvia
+    en uno de cada cuatro episodios. Todas las variantes ven los mismos escenarios."""
+    from .entorno.mundo import VIAS_SELECCIONABLES
+
+    maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
+    rng = np.random.default_rng(semilla)
+    escenarios = [{"via": str(rng.choice(list(VIAS_SELECCIONABLES))), "hora": float(rng.choice([10.0, 17.8, 21.0])),
+                   "lluvia": bool(rng.random() < 0.25)} for _ in range(episodios)]
+    reg = Registro(C.DIR_SALIDAS / "e7_red_ampliada.csv")
+    for nombre, politica, guard in (("reactivo_reglas", None, True), ("dqn_sin_guardrail", maestro, False),
+                                    ("dqn_con_guardrail", maestro, True)):
+        env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=guard, multiplicador_eventos=1.2)
+        try:
+            evaluar(env, politica, episodios, reg, nombre, opciones=lambda i: escenarios[i])
+        finally:
+            env.close()
     reg.cerrar()
 
 

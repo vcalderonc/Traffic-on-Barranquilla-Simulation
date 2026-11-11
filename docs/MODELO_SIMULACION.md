@@ -8,9 +8,12 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 
 * **Sistema:** el tránsito en la zona del Gran Malecón del Río de Barranquilla y uno o
   varios vehículos autónomos que circulan por ella.
-* **Frontera:** recuadro geográfico 10.998°–11.030° N, 74.776°–74.812° O
-  (≈ 3.9 km × 3.5 km). Contiene la Vía 40, la Avenida del Río, la Av. Calle 72, las
-  Calles 70–86 y las Carreras 53–75, más el río Magdalena.
+* **Frontera:** recuadro geográfico 10.995°–11.036° N, 74.770°–74.838° O
+  (≈ 7.4 km × 4.5 km). Contiene la Vía 40, la Avenida del Río (todo el Gran Malecón, de
+  la Ventana de Campeones a la Unidad Funcional 3), la Av. Calle 72, las Calles 70–99,
+  las Carreras 46–75, la zona de Buenavista y Plaza del Parque, la Ventana al Mundo y el
+  río Magdalena. (E1–E6 se corrieron con la primera versión, 10.998°–11.030° N,
+  74.776°–74.812° O; ver DECISIONES D-20.)
 * **Propósito:** estimar qué tan seguro, legal y cómodo conduce un vehículo cuya
   política de velocidad se aprende, y si ese conocimiento se puede **transferir** a
   otros vehículos (instructor → aprendiz, automóvil → bus, zona → zona).
@@ -19,12 +22,14 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 
 | Entidad | Atributos | Origen |
 |---|---|---|
-| Red vial | 2 942 tramos, 1 291 nodos, carriles, velocidad máxima, aceras, cebras, 50 semáforos, 11 PARE | OpenStreetMap, convertida con `netconvert` |
+| Red vial | 6 754 tramos, 3 051 nodos, carriles, velocidad máxima, aceras, cebras, 146 semáforos, 22 PARE (primera versión: 2 942 tramos, 50 semáforos, 11 PARE) | OpenStreetMap, convertida con `netconvert` |
 | Vehículo de fondo | tipo (auto 52 %, taxi 18 %, moto 18 %, bus 7 %, camión 5 %), ruta, aceleración, frenado, imperfección del conductor σ | `randomTrips.py`, modelo de seguimiento de Krauss |
 | Peatón de SUMO | ruta a pie por andenes y cebras | `randomTrips.py --pedestrians` |
 | Vehículo autónomo | perfil (automóvil, taxi, bus, camión), ruta, velocidad, 6 agentes, política | este proyecto |
 | Imprevisto | clase (peatón imprudente, perro, iguana, conos, frenada del líder), posición, velocidad de cruce, carriles a cruzar, prudencia | `entorno/eventos.py` |
-| Clima | fricción μ, alcance de sensores, ruido, probabilidad de omisión | `config.CLIMAS` |
+| Clima | fricción μ, alcance de sensores, ruido, probabilidad de omisión | `config.CLIMAS` (fijos) y `config.clima_dinamico(hora, lluvia)` |
+| Hora del día | hora (0–24), lluvia, velocidad del ciclo día-noche | opciones del episodio |
+| Lugar emblemático | posición, huella, altura (solo visual) | `data/hitos.json` (OSM) |
 | Base de conocimiento | versión del modelo global, historial de aportes | `aprendizaje/fedavg.py` |
 
 ## 3. Reloj y avance del tiempo
@@ -42,8 +47,9 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 
 | Variable | Distribución | Parámetros |
 |---|---|---|
-| Llegadas de vehículos de fondo | periódica con origen/destino aleatorio (randomTrips) | 1 vehículo cada 1.1 s × escala 0.75 ≈ 2 450 veh/h; 8× más probable entrar por el borde |
-| Llegadas de peatones de fondo | periódica, origen/destino aleatorio | 1 cada 2.5 s |
+| Llegadas de vehículos de fondo | periódica con origen/destino aleatorio (randomTrips) | 1 vehículo cada 1.4 s (red ampliada; 1.1 s en la primera) × escala 0.75; 8× más probable entrar por el borde |
+| Flujos de corredor (red ampliada) | flujo constante por sentido entre los extremos del corredor | Vía 40 600 veh/h; Av. Calle 72 y Av. Carrera 46 400; Calle 98 y Carrera 53 350; Calle 84 y Carrera 51B 300; Avenida del Río 260; Calles 79 y 76 250 (× 0.75) |
+| Llegadas de peatones de fondo | periódica, origen/destino aleatorio | 1 cada 1.6 s (2.5 s en la primera red) |
 | Imprevistos | **proceso de Poisson en el espacio** recorrido por el ego | tasa base por km: peatón 1.6, animal 0.8, obra 0.6, frenada del líder 0.8; multiplicada por el perfil de la zona |
 | Distancia de aparición | uniforme | peatón/animal 25–85 m; conos 70–92 m |
 | Velocidad de cruce | uniforme | peatón 1.0–1.7 m/s, perro 1.6–3.5 m/s, iguana 0.35–0.8 m/s |
@@ -56,7 +62,8 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 | Ruido de velocidad relativa | normal | σ = 0.25 × factor de clima |
 | Detección | Bernoulli | p = p_clase × p_tamaño × (1 − p_omisión) × (1 − 0.45 (d/alcance)³) |
 | Confusión peatón ↔ animal | Bernoulli por objeto | 5 % con lluvia o de noche |
-| Clima del episodio | categórica | despejado 60 %, lluvia 25 %, noche 15 % |
+| Clima del episodio | categórica | despejado 60 %, lluvia 25 %, noche 15 % (E1–E6) |
+| Luz natural | determinista según la hora | 0 de noche, 1 de día; amanecer 5:20–6:40, atardecer 17:30–18:50 |
 | Zona del episodio | uniforme | 3 zonas |
 
 **Perfiles de imprevistos por zona** (lo que hace los datos *no-IID* para el aprendizaje
@@ -69,6 +76,10 @@ federado):
 | Calles 79–85 | Calles 79/80/81/82/84/85, Carreras 53/55/56/59B | ×1.0 | ×0.8 | ×1.6 | ×1.0 |
 
 ## 5. Supuestos y simplificaciones (declarados)
+
+0. **Hora y clima dinámico:** el alcance, el ruido, las omisiones y la fricción se
+   interpolan entre "día" y "noche" según la luz natural y se les suma la lluvia
+   (D-22). Con la hora en los extremos coincide con los climas fijos de E1–E6.
 
 1. **Sin visión por computador.** La percepción degrada la verdad del simulador con un
    modelo de sensor explícito (alcance, ruido, omisión, confusión de clase). Es la
@@ -90,7 +101,10 @@ federado):
 7. **Alturas de edificios** (solo para el visor): pisos de OSM cuando existen (221 de
    11 869) y, si no, altura sintética según el área de la huella. No afectan la
    simulación.
-8. **Física longitudinal simple:** aceleración y frenado máximos por tipo de vehículo,
+8. **Lugares emblemáticos** (solo visuales, no afectan la simulación): ubicaciones de
+   OSM; la estatua de Shakira en posición aproximada (D-24); figuras estilizadas.
+9. **Volúmenes de los corredores** estimados, no aforados (D-21).
+10. **Física longitudinal simple:** aceleración y frenado máximos por tipo de vehículo,
    frenado escalado por la fricción μ. Sin dinámica lateral ni derrapes.
 
 ## 6. Verificación (¿el modelo hace lo que dice el código?)

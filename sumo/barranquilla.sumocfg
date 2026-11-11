@@ -2,7 +2,7 @@
 <configuration>
     <input>
         <net-file value="barranquilla.net.xml.gz"/>
-        <route-files value="trafico_fondo.rou.xml.gz,peatones.rou.xml.gz"/>
+        <route-files value="corredores.rou.xml,trafico_fondo.rou.xml.gz,peatones.rou.xml.gz"/>
         <additional-files value="vtypes.add.xml"/>
     </input>
     <time>

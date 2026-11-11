@@ -205,3 +205,80 @@ Sirve para la sustentación: si preguntan "¿por qué no X?", la respuesta está
   documentada. Esto respalda el principio de la guía: el aprendizaje se usa donde
   aporta y se combina con reglas y guardrails que garantizan lo que no se puede dejar
   al azar.
+
+---
+
+## Segunda etapa: ciudad ampliada, hora del día y simulación en vivo
+
+### D-20 · Red ampliada hasta Buenavista, la Ventana al Mundo y la Ventana de Campeones
+
+* **Decisión:** el recuadro pasa de 10.998–11.030 N / 74.776–74.812 O a
+  **10.995–11.036 N / 74.770–74.838 O**. La red tiene ahora 6 754 tramos, 146 semáforos,
+  22 PARE y 23 543 edificios.
+* **Por qué:** se pidió incluir la zona de los centros comerciales Buenavista y Plaza del
+  Parque (sobre la **Calle 98/99 con Carrera 53**; no la 93, como se verificó en OSM) y
+  modelar la ciudad lo más parecido posible. De paso entran la Ventana al Mundo y la
+  Ventana de Campeones.
+* **Consecuencia:** los experimentos E1–E6 se corrieron con la red anterior (commit
+  `985cee7`) y sus resultados siguen siendo válidos para esa red. La red nueva se valida
+  con E7. Repetir E1–E6 sobre la red nueva es posible con los mismos comandos (~2–3 h).
+
+### D-21 · Flujos de corredor además de los viajes aleatorios
+
+* **Problema detectado:** con viajes de origen y destino aleatorios, casi ningún carro
+  usaba la Avenida del Río; en los recorridos del Malecón el instructor iba solo
+  (0.1 vehículos a menos de 80 m en promedio).
+* **Decisión:** 16 flujos `<flow>` de SUMO entre los extremos de los grandes corredores
+  (Vía 40 600 veh/h por sentido, Av. Calle 72 y Av. Carrera 46 400, Calle 98 y Carrera 53
+  350, Calle 84 y Carrera 51B 300, Avenida del Río 260, Calles 79 y 76 250), más los
+  viajes aleatorios. Ahora hay ~490 vehículos en la red, 74 en la Vía 40 y 28 en la
+  Avenida del Río en un instante típico.
+* **Supuesto declarado:** los volúmenes son estimaciones razonables, no aforos oficiales.
+
+### D-22 · Hora del día, ciclo día-noche y clima dinámico
+
+* **Decisión:** el clima deja de ser solo una etiqueta fija. `config.clima_dinamico(hora,
+  lluvia)` interpola el alcance, el ruido, las omisiones y la fricción entre "día" y
+  "noche" según la luz natural de Barranquilla (amanece ~5:50, oscurece ~18:20) y le suma
+  la lluvia, de modo que **lluvia de noche** es el peor caso. Con `ciclo_min_por_s` la hora
+  avanza durante el episodio y los sensores del vehículo pierden alcance al oscurecer.
+* **Compatibilidad:** con la hora en los extremos coincide exactamente con los climas
+  fijos usados en E1–E6 (verificado con pruebas unitarias).
+* **Visor:** cielo por hora con el atardecer rosado-lila característico de la ciudad, sol
+  que sale por el río y se pone tras la ciudad, luna, estrellas, ventanas y alumbrado que
+  se encienden al oscurecer.
+
+### D-23 · Simulación en vivo en el navegador (Server-Sent Events)
+
+* **Decisión:** `python -m bq_sim vivo` levanta un servidor local (solo biblioteca
+  estándar) que corre SUMO + agentes y transmite cuadros al visor. El usuario elige la vía
+  (10 vías reales), la hora, la lluvia, el ciclo, quién conduce (instructor DQN o reglas),
+  el guardrail y la velocidad.
+* **Por qué SSE y un único hilo dueño de SUMO:** `libsumo` admite una sola simulación por
+  proceso y no debe usarse desde varios hilos; los pedidos HTTP le llegan por una cola. SSE
+  es unidireccional y basta para transmitir cuadros, sin dependencias nuevas.
+
+### D-24 · Lugares emblemáticos: ubicación real, forma estilizada
+
+* **Decisión:** posiciones y huellas tomadas de OpenStreetMap (`data/hitos.json`): Estatua
+  de Sofía Vergara, La Luna del Río, el carrusel, la Plaza de las Luces, el Edificio
+  Gastronómico Caimán del Río, C.C. Buenavista, Buenavista II, Mall Plaza Buenavista,
+  C.C. Plaza del Parque, Ventana al Mundo (47 m) y Ventana de Campeones (33 m).
+* **Estatua de Shakira:** OSM no la tiene con nombre. La prensa la ubica en la Unidad
+  Funcional 3 del Gran Malecón; se usó la escultura sin nombre que OSM registra en ese
+  tramo, junto al Caimán del Río. **Posición aproximada.**
+* **Estatuas estilizadas:** figuras de bronce simplificadas (bailarina con los brazos en
+  alto; figura con vestido saludando), sin intentar el parecido de las personas. La
+  rueda, el Caimán y las Ventanas son modelos simplificados con medidas aproximadas.
+* **Pantallas tipo Times Square** en la fachada de Buenavista que da a la vía: textos
+  genéricos de la ciudad, sin marcas comerciales.
+
+### D-25 · Entrenamiento acumulativo opcional
+
+* **Decisión:** `python -m bq_sim instructor --continuar` carga el instructor guardado,
+  lo sigue entrenando (100 episodios por defecto, exploración baja, ancla 0.25 a las
+  reglas), guarda una copia del anterior en `modelos/respaldo/` y anota las métricas en
+  `salidas/e1_continuacion_<n>.csv`.
+* **Por qué no es el comportamiento por defecto:** entrenar desde cero hace que los
+  resultados del informe se puedan repetir exactamente; el modo acumulativo es para quien
+  quiera que el instructor "siga aprendiendo" entre sesiones.

@@ -320,7 +320,8 @@ def fig_mapa() -> list[str]:
     ciudad = json.loads(ruta.read_text(encoding="utf-8"))
     ox, oy = ciudad["origen"]
     red = sumolib.net.readNet(str(C.RED_SUMO))
-    fig, axs = _figura(1, 1, ancho=9, alto=9)
+    x0, y0, x1, y1 = ciudad["limites"]
+    fig, axs = _figura(1, 1, ancho=12, alto=12 * (y1 - y0) / (x1 - x0) + 0.9)
     ax = axs[0, 0]
     ax.set_facecolor("#f1efe8")
     for p in ciudad["agua"]:
@@ -337,7 +338,15 @@ def fig_mapa() -> list[str]:
         if tipo in ("agua",) or (tipo == "lugar" and "Gran Malec" in nombre):
             ax.text(x, y, nombre, fontsize=9, color=TINTA, ha="center",
                     bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.8))
-    x0, y0, x1, y1 = ciudad["limites"]
+    destacados = {"luna": "La Luna del Río", "shakira": "Estatua de Shakira", "bv1": "Buenavista",
+                  "ventana_mundo": "Ventana al Mundo", "ventana_campeones": "Ventana de Campeones",
+                  "sofia": "Sofía Vergara"}
+    for h in ciudad.get("hitos", []):
+        if h["id"] in destacados:
+            ax.plot(h["x"], h["y"], marker="o", markersize=7, color=TINTA, markeredgecolor="white", zorder=5)
+            ax.annotate(destacados[h["id"]], (h["x"], h["y"]), textcoords="offset points", xytext=(6, 6),
+                        fontsize=8, color=TINTA, zorder=6,
+                        bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.85))
     ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
     ax.set_aspect("equal")
@@ -347,7 +356,7 @@ def fig_mapa() -> list[str]:
         lado.set_visible(False)
     ax.legend(loc="lower left", frameon=True, fontsize=8, title="Zonas (vías ancla reales de OSM)",
               title_fontsize=8)
-    ax.set_title("Zona simulada: Gran Malecón del Río, Barranquilla (OSM → SUMO)", loc="left",
+    ax.set_title("Zona simulada: norte de Barranquilla — Gran Malecón, Vía 40 y Buenavista (OSM → SUMO)", loc="left",
                  fontsize=12, color=TINTA)
     ax.text(x1, y0, "© colaboradores de OpenStreetMap", fontsize=7, color=TINTA2, ha="right", va="bottom")
     return [str(_guardar(fig, "mapa_zonas.png"))]

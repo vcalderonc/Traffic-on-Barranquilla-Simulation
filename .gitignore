@@ -21,3 +21,6 @@ sumo/tmp.net.xml.gz
 
 # Configuración local del editor/asistente
 .claude/
+
+# Archivo temporal que deja randomTrips.py en la raíz
+routes.rou.xml

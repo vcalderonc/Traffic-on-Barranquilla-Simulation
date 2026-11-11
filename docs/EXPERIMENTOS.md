@@ -26,6 +26,7 @@ tablas con intervalos de confianza en [salidas/RESUMEN.md](../salidas/RESUMEN.md
 | E4 | ¿Se puede pasar lo aprendido a un bus? | Política del instructor en: automóvil (referencia) · bus normalizado · bus con la copia tal cual | 20 episodios por variante, mismos escenarios |
 | E5 | ¿Sirve compartir por la nube? | Flota de 3 vehículos (taxi en el Malecón, automóvil en el corredor de la Calle 72, bus en las Calles 79–85): solo local · FedAvg | 4 rondas × 12 episodios por vehículo, partiendo del instructor; evaluación cruzada 6 episodios por modelo y zona |
 | E6 | ¿Reglas, aprendizaje o híbrido? | Agente de reglas (IDM) · DQN sin guardrail · DQN + guardrail, por clima | 10 episodios por variante y clima |
+| E7 | ¿Funciona el instructor en la red ampliada y con más tráfico? | Las mismas 3 variantes de E6 sobre las 10 vías seleccionables, a las 10:00, 17:48 o 21:00, con lluvia en ~1 de cada 4 | 12 episodios por variante, mismos escenarios |
 
 En E2–E6 todas las variantes de una comparación ven **la misma secuencia de
 escenarios** (zona y clima por episodio, misma semilla): números aleatorios comunes.
@@ -156,6 +157,34 @@ problema, el aprendizaje no aporta mucho por sí solo. Su valor en este proyecto
 lo que las reglas no hacen: **transferir y compartir conocimiento** entre vehículos y
 zonas (E2–E5).
 
+### E7 · Validación en la red ampliada (Buenavista, Calle 98, flujos de corredor)
+
+La red se amplió (6 754 tramos, 146 semáforos, flujos en los grandes corredores; ver
+DECISIONES D-20 y D-21) **después** de entrenar al instructor. E7 comprueba que su
+conocimiento sirve en vías y condiciones que no vio: hora del día variable con el clima
+dinámico (D-22) y lluvia.
+
+| Variante (12 episodios) | Choques | Casi-choques | Frenadas bruscas | Vel. media | Rojos / PARE violados | Recompensa |
+|---|---|---|---|---|---|---|
+| Conductor de reglas | 8 % (1) | 0.00 | 4.1 | 28.5 km/h | 0 / 0 | 26.2 |
+| DQN sin guardrail | 8 % (1) | 0.33 | 11.7 | 33.7 km/h | 0 / 0 | 29.4 |
+| DQN + guardrail | 8 % (1) | 0.25 | 11.3 | 32.1 km/h | 0 / 0 | 23.0 |
+
+**Lectura.** El instructor se transfiere a la red ampliada sin perder seguridad frente a
+las reglas (un choque en 12 episodios en cada variante), va más rápido y frena más
+brusco que el conductor de reglas, igual que en E6. Dos de los tres choques fueron con
+vehículos de los flujos de corredor (con TTC no crítico para el ego: alcances o cruces)
+y el tercero con un peatón bajo **lluvia de noche**, el escenario más difícil (alcance
+de sensores ≈ 27 m). Ningún agente cruzó semáforos en rojo ni PARE.
+
+**Recorridos grabados para el visor** (instructor con guardrail, 4 minutos): Malecón al
+atardecer con ciclo día-noche, de día y de noche, y Calle 98 de noche frente a
+Buenavista sin choques; Calle 84 con lluvia sin choques pero con mucho frenado (pare y
+siga con pavimento mojado). Dos intentos en la **Vía 40 con lluvia terminaron chocando
+con una iguana** (los animales pequeños se detectan tarde con lluvia y en esa zona hay
+más); uno se conserva como `recorrido_6_via40_lluvia_choque_iguana.json`, ejemplo
+documentado de una falla.
+
 ## Conclusiones
 
 1. **La arquitectura multiagente funciona y es explicable.** Seis agentes y un
@@ -184,5 +213,9 @@ zonas (E2–E5).
 * Los choques con tráfico de fondo se cuentan igual que los demás; convendría separar
   los que el ego provoca de los que recibe.
 * Sin calibración con aforos reales ni tiempos reales de semáforos de Barranquilla.
+* Animales pequeños con lluvia: la percepción los detecta tarde (choques con iguanas en
+  la Vía 40 con lluvia); un sensor adicional o reducir la velocidad con lluvia en zonas
+  de fauna serían mejoras naturales.
+* Repetir E1–E6 sobre la red ampliada (los comandos son los mismos; ~2–3 h de cómputo).
 * Despliegue en AWS EKS con nodos Spot (Stack Tech) y escenarios como el cierre de vías
   por arroyos en temporada de lluvias.
