@@ -95,12 +95,22 @@ federado):
 
 ## 6. Verificación (¿el modelo hace lo que dice el código?)
 
+* **Pruebas unitarias** (`python -m unittest discover -s tests -v`, 8 pruebas): el
+  gradiente de la red coincide con diferencias finitas; el DQN resuelve un problema
+  trivial; FedAvg pondera por experiencia; la normalización usa la capacidad propia del
+  bus y la copia tal cual queda recortada por su física; la lluvia reduce el frenado;
+  la proyección sobre el camino da distancias y laterales correctos.
 * Prueba de humo con el agente de reglas: 4 episodios sin choques, con peatones,
   perros, conos y frenadas generados y registrados (`salidas/`).
 * Prueba aislada de SUMO: un vehículo con `speedMode` sin distancia segura choca contra
   un obstáculo insertado y SUMO lo reporta (`ego → obs1`); con el control normal frena.
 * Las señales se verifican con `getNextTLS` y los enlaces con estado `s` (PARE) de
   `getNextLinks`; el evaluador cuenta PARE respetados y violados por separado.
+* **Flower sobre gRPC:** una ronda real con servidor y dos vehículos en procesos
+  separados (taxi en el Malecón, bus en las Calles 79–85), cada uno con su propio SUMO;
+  el servidor recibió los dos aportes, los combinó con FedAvg y guardó el modelo global
+  (`salidas/log_flower_*.txt`, `modelos/flower_global.npz`). Docker Compose no se pudo
+  probar porque el equipo no tiene Docker instalado.
 * Semillas fijas en SUMO, en la generación de demanda, en los imprevistos y en las
   redes: cada experimento es reproducible.
 

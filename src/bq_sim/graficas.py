@@ -79,20 +79,40 @@ def _leer(nombre: str) -> pd.DataFrame | None:
 
 
 # ------------------------------------------------------------------ E1
+def evaluaciones_e1(d: pd.DataFrame) -> pd.DataFrame:
+    """Agrupa las evaluaciones intercaladas (5 episodios sin exploración cada 50)."""
+    ev = d[d["fase"].str.endswith("evaluacion")].copy()
+    if ev.empty:
+        return ev
+    ev["grupo"] = range(len(ev))
+    ev["grupo"] = ev["grupo"] // 5
+    # la primera fila de cada evaluación lleva el número del episodio de entrenamiento tras el que se hizo
+    ev["tras_episodio"] = ev.groupby("grupo")["episodio"].transform("min")
+    return ev
+
+
 def fig_e1(ventana: int = 25) -> list[str]:
-    d = _leer("e1_instructor.csv")
-    if d is None:
+    todo = _leer("e1_instructor.csv")
+    if todo is None:
         return []
+    d = todo[todo["fase"] == "instructor"]
+    ev = evaluaciones_e1(todo)
     fig, axs = _figura(2, 2)
     paneles = [("recompensa", "Recompensa por episodio", "recompensa"),
-               ("choque", "Tasa de choques (media móvil)", "fracción de episodios"),
+               ("choque", "Tasa de choques", "fracción de episodios"),
                ("casi_choques", "Casi-choques (TTC < 1 s) por episodio", "eventos"),
                ("frenadas_bruscas", "Frenadas bruscas por episodio", "eventos")]
     for ax, (col, titulo, ylab) in zip(axs.flat, paneles):
-        _estilo(ax, titulo, "episodio", ylab)
-        ax.plot(d["episodio"], d[col], color=SERIES[0], alpha=0.18, linewidth=1)
-        ax.plot(d["episodio"], d[col].rolling(ventana, min_periods=5).mean(), color=SERIES[0], linewidth=2)
-    fig.suptitle("E1 · El vehículo instructor aprende desde cero (Double DQN, sin guardrail)",
+        _estilo(ax, titulo, "episodio de entrenamiento", ylab)
+        ax.plot(d["episodio"], d[col], color=SERIES[0], alpha=0.15, linewidth=1)
+        ax.plot(d["episodio"], d[col].rolling(ventana, min_periods=5).mean(), color=SERIES[0], linewidth=2,
+                label=f"entrenamiento (media móvil {ventana})")
+        if not ev.empty:
+            g = ev.groupby("tras_episodio")[col].mean()
+            ax.plot(g.index, g.values, color=SERIES[1], linewidth=2, marker="o", markersize=6,
+                    label="evaluación sin exploración (5 ep.)")
+    axs[0, 0].legend(frameon=False, fontsize=8, labelcolor=TINTA2)
+    fig.suptitle("E1 · El vehículo instructor aprende (Double DQN + demostraciones de reglas, sin guardrail)",
                  x=0.01, ha="left", fontsize=12, color=TINTA)
     return [str(_guardar(fig, "e1_curva_instructor.png"))]
 
@@ -123,10 +143,16 @@ def fig_e23(ventana: int = 10) -> list[str]:
     return [str(_guardar(fig, "e23_aprendices.png"))]
 
 
+def _yerr(medias, ics):
+    """Barras de error asimétricas que no bajan de 0 (tasas y conteos no son negativos)."""
+    ics = [0.0 if (e != e) else e for e in ics]
+    return [[min(e, max(m, 0.0)) for m, e in zip(medias, ics)], ics]
+
+
 def _barras_ic(ax, etiquetas, medias, ics, colores):
     xs = range(len(etiquetas))
     ax.bar(xs, medias, color=colores, width=0.6, edgecolor=SUPERFICIE, linewidth=2)
-    ax.errorbar(xs, medias, yerr=ics, fmt="none", ecolor=TINTA2, elinewidth=1.2, capsize=4)
+    ax.errorbar(xs, medias, yerr=_yerr(medias, ics), fmt="none", ecolor=TINTA2, elinewidth=1.2, capsize=4)
     ax.set_xticks(list(xs), etiquetas, fontsize=8)
     for x, m in zip(xs, medias):
         ax.annotate(f"{m:.2f}", (x, m), textcoords="offset points", xytext=(0, 4), ha="center",
@@ -211,7 +237,7 @@ def fig_e6() -> list[str]:
             xs = [k + (i - 1) * ancho for k in range(len(climas))]
             ax.bar(xs, [m for m, _ in mi], width=ancho, color=SERIES[i], edgecolor=SUPERFICIE, linewidth=2,
                    label=nombre)
-            ax.errorbar(xs, [m for m, _ in mi], yerr=[e for _, e in mi], fmt="none", ecolor=TINTA2,
+            ax.errorbar(xs, [m for m, _ in mi], yerr=_yerr([m for m, _ in mi], [e for _, e in mi]), fmt="none", ecolor=TINTA2,
                         elinewidth=1, capsize=3)
         ax.set_xticks(range(len(climas)), climas, fontsize=8)
     axs[0, 0].legend(frameon=False, fontsize=8, labelcolor=TINTA2)
@@ -253,8 +279,13 @@ def tabla_resumen() -> str:
         if d is None:
             continue
         if col_var is None:
-            d["grupo"] = "episodios " + ((d["episodio"] - 1) // 50 * 50 + 1).astype(str) + "–" + \
-                         ((d["episodio"] - 1) // 50 * 50 + 50).astype(str)
+            ev = evaluaciones_e1(d)
+            d = d[d["fase"] == "instructor"].copy()
+            d["grupo"] = "entrenamiento, episodios " + ((d["episodio"] - 1) // 50 * 50 + 1).astype(str) + \
+                "–" + ((d["episodio"] - 1) // 50 * 50 + 50).astype(str)
+            if not ev.empty:
+                ev["grupo"] = "evaluación sin exploración tras " + ev["tras_episodio"].astype(str) + " episodios"
+                d = pd.concat([d, ev])
         else:
             d["grupo"] = d[col_var].str.split("/").str[0]
             maximo = d.groupby(col_var)["episodio"].transform("max")
@@ -273,8 +304,57 @@ def tabla_resumen() -> str:
     return texto
 
 
+def fig_mapa() -> list[str]:
+    """Mapa de la zona simulada: red real, río Magdalena, parques del Malecón y las 3 zonas."""
+    import json
+
+    import sumolib
+    from matplotlib.collections import LineCollection
+    from matplotlib.patches import Polygon
+
+    from .entorno.mundo import ZONAS
+
+    ruta = C.DIR_VISOR / "datos" / "ciudad.json"
+    if not ruta.exists():
+        return []
+    ciudad = json.loads(ruta.read_text(encoding="utf-8"))
+    ox, oy = ciudad["origen"]
+    red = sumolib.net.readNet(str(C.RED_SUMO))
+    fig, axs = _figura(1, 1, ancho=9, alto=9)
+    ax = axs[0, 0]
+    ax.set_facecolor("#f1efe8")
+    for p in ciudad["agua"]:
+        ax.add_patch(Polygon(list(zip(p[0::2], p[1::2])), closed=True, color="#9cc3d9", lw=0))
+    for _, p in ciudad["parques"]:
+        ax.add_patch(Polygon(list(zip(p[0::2], p[1::2])), closed=True, color="#b9d8a6", lw=0))
+    lineas = [[(x - ox, y - oy) for x, y in e.getShape()] for e in red.getEdges() if e.allows("passenger")]
+    ax.add_collection(LineCollection(lineas, colors="#a8a6a0", linewidths=0.6))
+    for i, (clave, z) in enumerate(ZONAS.items()):
+        segs = [[(x - ox, y - oy) for x, y in e.getShape()] for e in red.getEdges()
+                if e.getName() in z["calles"] and e.allows("passenger")]
+        ax.add_collection(LineCollection(segs, colors=SERIES[i], linewidths=2.2, label=z["nombre"]))
+    for tipo, nombre, x, y in ciudad["etiquetas"]:
+        if tipo in ("agua",) or (tipo == "lugar" and "Gran Malec" in nombre):
+            ax.text(x, y, nombre, fontsize=9, color=TINTA, ha="center",
+                    bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.8))
+    x0, y0, x1, y1 = ciudad["limites"]
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for lado in ax.spines.values():
+        lado.set_visible(False)
+    ax.legend(loc="lower left", frameon=True, fontsize=8, title="Zonas (vías ancla reales de OSM)",
+              title_fontsize=8)
+    ax.set_title("Zona simulada: Gran Malecón del Río, Barranquilla (OSM → SUMO)", loc="left",
+                 fontsize=12, color=TINTA)
+    ax.text(x1, y0, "© colaboradores de OpenStreetMap", fontsize=7, color=TINTA2, ha="right", va="bottom")
+    return [str(_guardar(fig, "mapa_zonas.png"))]
+
+
 def todas() -> None:
-    hechas = fig_e1() + fig_e23() + fig_e4() + fig_e5() + fig_e6()
+    hechas = fig_mapa() + fig_e1() + fig_e23() + fig_e4() + fig_e5() + fig_e6()
     tabla_resumen()
     for h in hechas:
         print("figura:", h)

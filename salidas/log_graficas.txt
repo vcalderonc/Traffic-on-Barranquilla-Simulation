@@ -1,0 +1,8 @@
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\mapa_zonas.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e1_curva_instructor.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e23_aprendices.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e4_bus_normalizacion.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e5_federado_curvas.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e5_evaluacion_cruzada.png
+figura: D:\Documents\GitHub\Traffic-on-Barranquilla-Simulation\salidas\figuras\e6_comparacion.png
+tabla: salidas/RESUMEN.md

@@ -1,0 +1,16 @@
+[taxi@malecon_via40/ronda1] ep   12 | choques 0/12 | casi 0.25 | brusc 13.0 | interv 0.0 | R   40.71 | v 35.0 km/h | eps 0.05 | 47s
+[automovil@corredor_calle72/ronda1] ep   12 | choques 3/12 | casi 0.58 | brusc 12.2 | interv 0.0 | R   -7.14 | v 20.2 km/h | eps 0.05 | 51s
+[bus@calles79_85/ronda1] ep   12 | choques 1/12 | casi 0.50 | brusc 12.6 | interv 0.0 | R   24.59 | v 27.3 km/h | eps 0.04 | 52s
+[nube] ronda 1: versión 1 aceptados=['taxi@malecon_via40', 'automovil@corredor_calle72', 'bus@calles79_85'] rechazados=[]
+[taxi@malecon_via40/ronda2] ep   24 | choques 2/12 | casi 0.25 | brusc 6.7 | interv 0.0 | R   18.80 | v 36.4 km/h | eps 0.02 | 12s
+[automovil@corredor_calle72/ronda2] ep   24 | choques 0/12 | casi 0.08 | brusc 9.7 | interv 0.0 | R   32.45 | v 23.9 km/h | eps 0.02 | 14s
+[bus@calles79_85/ronda2] ep   24 | choques 3/12 | casi 0.25 | brusc 4.5 | interv 0.0 | R    2.73 | v 27.4 km/h | eps 0.02 | 13s
+[nube] ronda 2: versión 2 aceptados=['taxi@malecon_via40', 'automovil@corredor_calle72'] rechazados=['bus@calles79_85']
+[taxi@malecon_via40/ronda3] ep   36 | choques 0/12 | casi 0.08 | brusc 6.9 | interv 0.0 | R   38.71 | v 32.6 km/h | eps 0.02 | 14s
+[automovil@corredor_calle72/ronda3] ep   36 | choques 0/12 | casi 0.00 | brusc 6.2 | interv 0.0 | R   34.06 | v 26.4 km/h | eps 0.02 | 13s
+[bus@calles79_85/ronda3] ep   36 | choques 1/12 | casi 0.00 | brusc 4.3 | interv 0.0 | R   30.16 | v 27.8 km/h | eps 0.02 | 16s
+[nube] ronda 3: versión 3 aceptados=['taxi@malecon_via40', 'automovil@corredor_calle72', 'bus@calles79_85'] rechazados=[]
+[taxi@malecon_via40/ronda4] ep   48 | choques 1/12 | casi 0.33 | brusc 10.0 | interv 0.0 | R   25.98 | v 36.7 km/h | eps 0.02 | 15s
+[automovil@corredor_calle72/ronda4] ep   48 | choques 0/12 | casi 0.08 | brusc 7.4 | interv 0.0 | R   38.72 | v 26.2 km/h | eps 0.02 | 24s
+[bus@calles79_85/ronda4] ep   48 | choques 0/12 | casi 0.25 | brusc 5.1 | interv 0.0 | R   38.65 | v 28.5 km/h | eps 0.02 | 16s
+[nube] ronda 4: versión 4 aceptados=['taxi@malecon_via40', 'automovil@corredor_calle72', 'bus@calles79_85'] rechazados=[]

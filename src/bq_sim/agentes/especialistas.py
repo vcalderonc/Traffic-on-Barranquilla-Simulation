@@ -187,6 +187,7 @@ class AgenteSeguridad:
         self.perfil = perfil
         self.ttc_critico = ttc_critico
         self.activo = activo
+        self.veto_teorico = False
 
     def carril_seguro(self, mm: ModeloMundo, destino: int) -> bool:
         lado = 1 if destino < mm.carril_idx else -1  # carril de índice menor = a la derecha
@@ -199,8 +200,13 @@ class AgenteSeguridad:
         return True
 
     def proponer(self, mm: ModeloMundo, amenazas: list[Objeto], carril_pedido: int | None) -> Propuesta:
-        if not self.activo:
-            return Propuesta(self.nombre)
+        """Si está desactivada (entrenamiento) no impone nada, pero igual calcula su
+        veto en ``veto_teorico`` para que el conductor de reglas pueda dar demostraciones."""
+        p = self._evaluar(mm, amenazas, carril_pedido)
+        self.veto_teorico = p.veto
+        return p if self.activo else Propuesta(self.nombre)
+
+    def _evaluar(self, mm: ModeloMundo, amenazas: list[Objeto], carril_pedido: int | None) -> Propuesta:
         b_max = self.perfil.frenado_max(mm.clima.mu)
         veto, motivo, a = False, "", INF
         for o in amenazas:

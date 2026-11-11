@@ -76,8 +76,8 @@ aprendizaje federado.
 
 | # | Pregunta | Diseño |
 |---|---|---|
-| E1 | ¿Aprende el instructor? | 400 episodios desde cero, sin guardrail, 3 zonas, 3 climas |
-| E2/E3 | ¿Enseña el instructor? | Taxi aprendiz: desde cero vs. con instructor (doble comando) vs. copia + instructor; 2 semillas |
+| E1 | ¿Aprende el instructor? | 400 episodios (refuerzo + demostraciones de reglas), sin guardrail, 3 zonas, 3 climas |
+| E2/E3 | ¿Enseña el instructor? | Taxi aprendiz: desde cero vs. con instructor (doble comando) vs. copia + instructor; 2 semillas × 50 episodios |
 | E4 | ¿Es seguro transferir a un bus? | Política del instructor en un bus: normalizada vs. copiada tal cual |
 | E5 | ¿Sirve compartir por la nube? | 3 vehículos en 3 zonas: solo local vs. FedAvg; evaluación cruzada |
 | E6 | ¿Reglas, aprendizaje o híbrido? | Agente de reglas vs. DQN vs. DQN + guardrail, por clima |

@@ -1,0 +1,2 @@
+episodio,fase,zona,clima,perfil,ruta,largo_ruta_m,pasos,tiempo_s,distancia_m,vel_media_kmh,choques,choque_con,casi_choques,pare_violados,pare_respetados,rojos_violados,frenadas_bruscas,pasos_exceso_vel,intervenciones_seguridad,intervenciones_instructor,llego,ttc_min,recompensa,epsilon,perdida,lambda_imitacion,segundos_reloj
+1,flower/taxi@malecon_via40/r0,malecon_via40,despejado,taxi,Avenida del Río,1085.7,600,150.0,53.3,1.28,0,,0,0,0,0,77,0,0,0,False,99.0,-23.081,0.953,0.0,0.0,6.57

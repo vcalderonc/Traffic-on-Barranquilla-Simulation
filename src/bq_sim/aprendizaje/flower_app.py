@@ -43,7 +43,9 @@ def _cliente(perfil: str, zona: str, episodios: int, semilla: int, inicial: str 
         def __init__(self):
             self.env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=False, perfil=perfil, zonas=[zona],
                                                  multiplicador_eventos=1.2)
-            self.agente = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_pasos=12_000), semilla=semilla)
+            # si arranca con el conocimiento del instructor, explora poco (ya sabe conducir)
+            hp = HiperDQN(eps_inicial=0.10, eps_final=0.02, eps_pasos=8_000) if inicial else HiperDQN(eps_pasos=12_000)
+            self.agente = AgenteDQN(N_OBS, N_ACC, hp, semilla=semilla)
             if inicial:
                 maestro, _ = AgenteDQN.cargar(inicial)
                 self.agente.fijar_parametros(maestro.obtener_parametros())
@@ -57,7 +59,7 @@ def _cliente(perfil: str, zona: str, episodios: int, semilla: int, inicial: str 
             self.agente.fijar_parametros(parameters)
             filas = entrenar(self.env, self.agente, int(config.get("episodios", episodios)), self.reg,
                              f"flower/{perfil}@{zona}/r{self.ronda}", inicio=self.ronda * episodios,
-                             imprimir_cada=0)
+                             imprimir_cada=0, demostraciones_reglas=1)  # ancla a las reglas, como en E5
             self.ronda += 1
             n = len(filas)
             pasos = int(sum(f["pasos"] for f in filas))

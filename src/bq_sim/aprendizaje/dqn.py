@@ -79,6 +79,12 @@ class Adam:
 
 # --------------------------------------------------------------- memoria replay
 class MemoriaReplay:
+    """Memoria circular de transiciones de n pasos.
+
+    ``desc`` guarda el descuento acumulado de cada transición (gamma^k, con k = pasos
+    reales que abarca), para que el objetivo sea r_n + desc * max Q(s_n).
+    """
+
     def __init__(self, capacidad: int, n_obs: int, semilla: int = 0):
         self.cap = capacidad
         self.s = np.zeros((capacidad, n_obs), np.float32)
@@ -86,21 +92,25 @@ class MemoriaReplay:
         self.r = np.zeros(capacidad, np.float32)
         self.s2 = np.zeros((capacidad, n_obs), np.float32)
         self.fin = np.zeros(capacidad, np.float32)
-        self.a_guia = np.full(capacidad, -1, np.int64)  # acción del instructor (-1 = sin dato)
+        self.desc = np.zeros(capacidad, np.float32)
+        self.a_guia = np.full(capacidad, -1, np.int64)  # acción de quien enseña (-1 = sin dato)
         self.i = 0
         self.n = 0
         self.rng = np.random.default_rng(semilla)
 
-    def agregar(self, s, a, r, s2, fin, a_guia=-1):
+    def agregar(self, s, a, r, s2, fin, desc, a_guia=-1):
         k = self.i
         self.s[k], self.a[k], self.r[k], self.s2[k], self.fin[k] = s, a, r, s2, fin
-        self.a_guia[k] = a_guia
+        self.desc[k], self.a_guia[k] = desc, a_guia
         self.i = (self.i + 1) % self.cap
         self.n = min(self.n + 1, self.cap)
 
-    def muestra(self, lote: int):
-        idx = self.rng.integers(0, self.n, size=lote)
-        return self.s[idx], self.a[idx], self.r[idx], self.s2[idx], self.fin[idx], self.a_guia[idx]
+    def indices(self, lote: int) -> np.ndarray:
+        return self.rng.integers(0, self.n, size=lote)
+
+    def tomar(self, idx):
+        return (self.s[idx], self.a[idx], self.r[idx], self.s2[idx], self.fin[idx], self.desc[idx],
+                self.a_guia[idx])
 
 
 # ------------------------------------------------------------------- agente DQN
@@ -116,8 +126,11 @@ class HiperDQN:
     eps_final: float = 0.05
     eps_pasos: int = 40_000
     ocultas: tuple = (64, 64)
-    peso_imitacion: float = 0.0  # lambda de la pérdida de imitación (la fija el instructor)
+    peso_imitacion: float = 0.0  # lambda de la pérdida de imitación (la fija quien enseña)
     margen_imitacion: float = 0.8
+    n_pasos: int = 3             # retornos de n pasos: el castigo llega antes a la causa
+    memoria_incidentes: int = 8_000
+    frac_incidentes: float = 0.10  # fracción de cada lote tomada de la memoria de incidentes
 
 
 class AgenteDQN:
@@ -136,9 +149,12 @@ class AgenteDQN:
         self.objetivo.copiar_de(self.red)
         self.opt = Adam(self.red.params, self.hp.lr)
         self.mem = MemoriaReplay(self.hp.memoria, n_obs, semilla)
+        self.incidentes = MemoriaReplay(self.hp.memoria_incidentes, n_obs, semilla + 7)
         self.rng = np.random.default_rng(semilla + 1)
         self.pasos = 0
         self.ultima_perdida = 0.0
+        self._pend: list = []      # transiciones de 1 paso aún sin completar n pasos
+        self._recientes: list = []  # últimas transiciones n-paso guardadas (para incidentes)
 
     # --- política
     def epsilon(self) -> float:
@@ -154,19 +170,57 @@ class AgenteDQN:
         return int(np.argmax(self.valores_q(obs)))
 
     # --- aprendizaje
-    def recordar(self, s, a, r, s2, fin, a_guia=-1):
-        self.mem.agregar(s, a, r, s2, fin, a_guia)
+    def recordar(self, s, a, r, s2, fin, a_guia=-1, truncado: bool = False):
+        """Recibe transiciones de 1 paso y guarda transiciones de n pasos.
+
+        Si la recompensa es un incidente (choque o casi-choque), copia los ~2 s
+        previos a la memoria de incidentes.
+        """
         self.pasos += 1
+        self._pend.append((s, a, r, s2, fin, a_guia))
+        terminado = fin > 0 or truncado
+        while self._pend and (len(self._pend) >= self.hp.n_pasos or terminado):
+            self._guardar_n_pasos()
+            if not terminado:
+                break
+        if r <= -5.0:
+            for t in self._recientes[-8:]:
+                self.incidentes.agregar(*t)
+        if terminado:
+            self._pend.clear()
+            self._recientes.clear()
+
+    def _guardar_n_pasos(self):
+        g = self.hp.gamma
+        R, desc = 0.0, 1.0
+        fin_n, s_n = 0.0, None
+        for (_s, _a, r, s2, fin, _g) in self._pend[: self.hp.n_pasos]:
+            R += desc * r
+            desc *= g
+            s_n, fin_n = s2, fin
+            if fin > 0:
+                break
+        s0, a0, _, _, _, guia0 = self._pend.pop(0)
+        t = (s0, a0, R, s_n, fin_n, desc, guia0)
+        self.mem.agregar(*t)
+        self._recientes.append(t)
+        if len(self._recientes) > 16:
+            self._recientes.pop(0)
 
     def entrenar(self) -> float:
         if self.mem.n < self.hp.inicio_aprendizaje:
             return 0.0
-        s, a, r, s2, fin, a_guia = self.mem.muestra(self.hp.lote)
+        n_inc = int(self.hp.lote * self.hp.frac_incidentes) if self.incidentes.n >= 64 else 0
+        lote_a = self.mem.tomar(self.mem.indices(self.hp.lote - n_inc))
+        if n_inc:
+            lote_b = self.incidentes.tomar(self.incidentes.indices(n_inc))
+            lote_a = tuple(np.concatenate([x, y]) for x, y in zip(lote_a, lote_b))
+        s, a, r, s2, fin, desc, a_guia = lote_a
         q, cache = self.red.forward(s)
         # Double DQN: la red en línea elige, la red objetivo evalúa
         a2 = np.argmax(self.red.forward(s2)[0], axis=1)
         q2 = self.objetivo.forward(s2)[0][np.arange(len(a2)), a2]
-        y = r + self.hp.gamma * (1.0 - fin) * q2
+        y = r + desc * (1.0 - fin) * q2
         filas = np.arange(len(a))
         td = q[filas, a] - y
         # gradiente de Huber (delta = 1)

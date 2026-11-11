@@ -1,0 +1,37 @@
+WARNING :   DEPRECATED FEATURE: flwr.server.start_server() is deprecated.
+	Instead, use the `flower-superlink` CLI command to start a SuperLink as shown below:
+
+		$ flower-superlink --insecure
+
+	To view usage and all available options, run:
+
+		$ flower-superlink --help
+
+	Using `start_server()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+INFO :      Starting Flower server, config: num_rounds=1, no round_timeout
+INFO :      Flower ECE: gRPC server running (1 rounds), SSL is disabled
+INFO :      [INIT]
+INFO :      Using initial global parameters provided by strategy
+INFO :      Starting evaluation of initial global parameters
+INFO :      Evaluation returned no results (`None`)
+INFO :      
+INFO :      [ROUND 1]
+INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+INFO :      aggregate_fit: received 2 results and 0 failures
+[servidor] ronda 1: modelo global guardado | {'recompensa': -23.821500000000004, 'tasa_choques': 0.0}
+INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+INFO :      aggregate_evaluate: received 2 results and 0 failures
+INFO :      
+INFO :      [SUMMARY]
+INFO :      Run finished 1 round(s) in 41.98s
+INFO :      	History (loss, distributed):
+INFO :      		round 1: -38.23324966430664
+INFO :      	History (metrics, distributed, fit):
+INFO :      	{'recompensa': [(1, -23.821500000000004)], 'tasa_choques': [(1, 0.0)]}
+INFO :      	History (metrics, distributed, evaluate):
+INFO :      	{'recompensa': [(1, 38.23325)], 'tasa_choques': [(1, 0.0)]}
+INFO :      

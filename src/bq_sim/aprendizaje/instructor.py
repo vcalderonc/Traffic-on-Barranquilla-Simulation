@@ -26,12 +26,13 @@ from .perfiles import ACCIONES, NOMBRES_ACCIONES
 
 class InstructorDobleComando:
     def __init__(self, maestro: AgenteDQN, tolerancia_q: float = 0.6, riesgo_minimo: float = 0.25,
-                 episodios_tutela: int = 50, lambda_inicial: float = 1.0):
+                 episodios_tutela: int = 50, lambda_inicial: float = 1.0, piso_lambda: float = 0.25):
         self.maestro = maestro
         self.tol0 = tolerancia_q
         self.riesgo_min = riesgo_minimo
         self.tutela = episodios_tutela
         self.lam0 = lambda_inicial
+        self.piso = piso_lambda
         self.ep = 0
         self.ultima_guia = -1
         self.intervenciones_ep = 0
@@ -46,8 +47,8 @@ class InstructorDobleComando:
 
     @property
     def lam(self) -> float:
-        """Peso de la pérdida de imitación: decae linealmente durante la tutela."""
-        return self.lam0 * (1.0 - self.fraccion)
+        """Peso de la pérdida de imitación: decae durante la tutela hasta un piso (el consejo queda)."""
+        return self.lam0 * max(self.piso, 1.0 - self.fraccion)
 
     @property
     def tolerancia(self) -> float:

@@ -23,6 +23,23 @@ Malecón** en el navegador.
 | Enseñanza | instructor con *doble comando* + demostraciones + transferencia normalizada |
 | Federado | FedAvg con validación, 3 zonas no-IID; versión distribuida con Flower + Docker Compose |
 
+![Zona simulada](salidas/figuras/mapa_zonas.png)
+
+## Resultados principales
+
+Detalle, figuras e intervalos de confianza en [docs/EXPERIMENTOS.md](docs/EXPERIMENTOS.md).
+
+| Experimento | Resultado |
+|---|---|
+| E1 · El instructor aprende | De 7 km/h y 66 frenadas bruscas por episodio a ~30 km/h y 3–5; **0 choques en 40 evaluaciones** sin exploración; ningún rojo ni PARE cruzado |
+| E2/E3 · El instructor enseña a un taxi | Con la copia normalizada + instructor, el taxi llega al nivel objetivo en **5 episodios** (18–34 aprendiendo solo); con solo doble comando termina más suave y rápido que solo |
+| E4 · Automóvil → bus | Normalizado: el bus conduce igual que el automóvil. Copiado tal cual: **el bus no arranca** (1.8 km/h) |
+| E5 · Flota federada en 3 zonas | El modelo FedAvg **no choca en ninguna zona** (0/18) y supera a los modelos locales, que fallan fuera de su zona; la nube rechazó un aporte dañino del bus |
+| E6 · Reglas vs. DQN vs. híbrido | Seguridad estadísticamente equivalente: el aprendizaje alcanza a las reglas pero no las supera; su valor está en la transferencia |
+
+La historia completa del entrenamiento (cuatro versiones fallidas, cómo se detectó cada
+falla y cómo se corrigió) está en [docs/DECISIONES.md](docs/DECISIONES.md), D-11 a D-19.
+
 ## Documentación
 
 | Documento | Contenido |
@@ -58,12 +75,12 @@ python -m http.server 8000 -d visor
 python -m bq_sim gui --zona malecon_via40 --clima lluvia
 ```
 
-Para regenerar todo desde cero:
+Para regenerar todo desde cero (o `bash scripts/correr_experimentos.sh` para E2–E6 + visor + gráficas, ~1 h):
 
 ```powershell
 python -m bq_sim red --descargar      # OSM -> red SUMO con PARE (necesita internet)
 python -m bq_sim demanda              # tráfico de fondo y peatones
-python -m bq_sim instructor           # E1: entrena el vehículo instructor (~15 min)
+python -m bq_sim instructor           # E1: entrena el vehículo instructor (~25 min en un portátil de 2 núcleos)
 python -m bq_sim aprendices           # E2/E3
 python -m bq_sim bus                  # E4
 python -m bq_sim federado --modo local
@@ -83,7 +100,7 @@ python -m bq_sim.aprendizaje.flower_app vehiculo --perfil automovil --zona corre
 python -m bq_sim.aprendizaje.flower_app vehiculo --perfil bus --zona calles79_85 --semilla 3
 ```
 
-O con Docker: `docker compose up --build`.
+O con Docker: `docker compose up --build` (los archivos están listos, pero Docker no se probó en el equipo de desarrollo; la versión con procesos sí se verificó).
 
 ## Estructura
 

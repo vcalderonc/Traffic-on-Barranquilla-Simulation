@@ -414,7 +414,7 @@ function actualizarCamara(dt) {
   if (camModo === 'libre') { controls.update(); return; }
   const a = egoAng * Math.PI / 180; const fx = Math.sin(a), fz = -Math.cos(a);
   if (camModo === 'seguir') { camObj.set(egoPos.x - fx * 22, 10, egoPos.z - fz * 22); camMira.set(egoPos.x + fx * 25, 1.5, egoPos.z + fz * 25); }
-  else if (camModo === 'cenital') { camObj.set(egoPos.x + 1, 260, egoPos.z + 1); camMira.copy(egoPos); }
+  else if (camModo === 'cenital') { camObj.set(egoPos.x, 240, egoPos.z + 45); camMira.copy(egoPos); }  // norte arriba
   else if (camModo === 'malecon') {
     const c = centroMalecon || new THREE.Vector2(0, 0); const r = centroRio || new THREE.Vector2(c.x + 500, c.y);
     const dir = new THREE.Vector2(r.x - c.x, r.y - c.y).normalize(); const ang = performance.now() * 0.00003;

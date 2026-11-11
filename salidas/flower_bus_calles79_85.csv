@@ -1,0 +1,2 @@
+episodio,fase,zona,clima,perfil,ruta,largo_ruta_m,pasos,tiempo_s,distancia_m,vel_media_kmh,choques,choque_con,casi_choques,pare_violados,pare_respetados,rojos_violados,frenadas_bruscas,pasos_exceso_vel,intervenciones_seguridad,intervenciones_instructor,llego,ttc_min,recompensa,epsilon,perdida,lambda_imitacion,segundos_reloj
+1,flower/bus@calles79_85/r0,calles79_85,despejado,bus,Carrera 56 → Calle 80,704.4,600,150.0,22.2,0.53,0,,0,0,0,0,71,0,0,0,False,99.0,-24.562,0.953,0.0,0.0,6.65

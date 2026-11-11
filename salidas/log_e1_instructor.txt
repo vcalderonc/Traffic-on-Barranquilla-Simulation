@@ -1,0 +1,48 @@
+[instructor] ep   10 | choques 0/10 | casi 0.10 | brusc 56.8 | interv 0.0 | R  -18.41 | v  1.6 km/h | eps 0.92 | 60s
+[instructor] ep   20 | choques 0/10 | casi 0.10 | brusc 80.5 | interv 0.0 | R  -18.31 | v  4.4 km/h | eps 0.83 | 57s
+[instructor] ep   30 | choques 0/10 | casi 0.00 | brusc 81.9 | interv 0.0 | R  -10.73 | v  7.9 km/h | eps 0.73 | 65s
+[instructor] ep   40 | choques 1/10 | casi 0.10 | brusc 55.5 | interv 0.0 | R  -15.51 | v  7.2 km/h | eps 0.66 | 12s
+[instructor] evaluación tras 50 episodios | choques 0/5 | casi 0.20 | brusc 2.6 | v 28.9 km/h | R 34.6
+[instructor] ep   50 | choques 0/10 | casi 0.00 | brusc 56.3 | interv 0.0 | R    6.64 | v 12.6 km/h | eps 0.58 | 13s
+[instructor] ep   60 | choques 0/10 | casi 0.00 | brusc 63.9 | interv 0.0 | R   19.19 | v 20.6 km/h | eps 0.48 | 14s
+[instructor] ep   70 | choques 0/10 | casi 0.00 | brusc 45.5 | interv 0.0 | R   25.18 | v 21.4 km/h | eps 0.40 | 14s
+[instructor] ep   80 | choques 2/10 | casi 0.30 | brusc 33.8 | interv 0.0 | R    0.51 | v 24.2 km/h | eps 0.33 | 11s
+[instructor] ep   90 | choques 0/10 | casi 0.00 | brusc 32.9 | interv 0.0 | R   27.91 | v 26.9 km/h | eps 0.25 | 11s
+[instructor] evaluación tras 100 episodios | choques 0/5 | casi 0.00 | brusc 8.4 | v 34.5 km/h | R 32.7
+[instructor] ep  100 | choques 0/10 | casi 0.00 | brusc 29.1 | interv 0.0 | R   37.61 | v 29.4 km/h | eps 0.17 | 14s
+[instructor] ep  110 | choques 0/10 | casi 0.20 | brusc 19.9 | interv 0.0 | R   31.34 | v 26.1 km/h | eps 0.09 | 12s
+[instructor] ep  120 | choques 0/10 | casi 0.10 | brusc 7.7 | interv 0.0 | R   39.11 | v 31.7 km/h | eps 0.02 | 12s
+[instructor] ep  130 | choques 0/10 | casi 0.00 | brusc 4.7 | interv 0.0 | R   29.59 | v 29.3 km/h | eps 0.02 | 11s
+[instructor] ep  140 | choques 0/10 | casi 0.10 | brusc 2.7 | interv 0.0 | R   29.51 | v 26.2 km/h | eps 0.02 | 9s
+[instructor] evaluación tras 150 episodios | choques 0/5 | casi 0.20 | brusc 2.2 | v 35.4 km/h | R 42.2
+[instructor] ep  150 | choques 0/10 | casi 0.20 | brusc 4.3 | interv 0.0 | R   36.12 | v 30.3 km/h | eps 0.02 | 15s
+[instructor] ep  160 | choques 0/10 | casi 0.10 | brusc 4.8 | interv 0.0 | R   31.22 | v 30.8 km/h | eps 0.02 | 9s
+[instructor] ep  170 | choques 0/10 | casi 0.30 | brusc 7.1 | interv 0.0 | R   31.40 | v 26.3 km/h | eps 0.02 | 14s
+[instructor] ep  180 | choques 0/10 | casi 0.00 | brusc 4.8 | interv 0.0 | R   30.61 | v 26.4 km/h | eps 0.02 | 15s
+[instructor] ep  190 | choques 0/10 | casi 0.10 | brusc 4.7 | interv 0.0 | R   41.10 | v 29.4 km/h | eps 0.02 | 13s
+[instructor] evaluación tras 200 episodios | choques 0/5 | casi 0.20 | brusc 2.6 | v 33.5 km/h | R 40.4
+[instructor] ep  200 | choques 0/10 | casi 0.20 | brusc 5.4 | interv 0.0 | R   30.02 | v 25.2 km/h | eps 0.02 | 14s
+[instructor] ep  210 | choques 0/10 | casi 0.00 | brusc 6.1 | interv 0.0 | R   40.05 | v 29.8 km/h | eps 0.02 | 13s
+[instructor] ep  220 | choques 0/10 | casi 0.00 | brusc 5.8 | interv 0.0 | R   40.76 | v 31.8 km/h | eps 0.02 | 16s
+[instructor] ep  230 | choques 0/10 | casi 0.00 | brusc 5.2 | interv 0.0 | R   38.27 | v 30.0 km/h | eps 0.02 | 11s
+[instructor] ep  240 | choques 0/10 | casi 0.00 | brusc 3.8 | interv 0.0 | R   40.25 | v 31.7 km/h | eps 0.02 | 11s
+[instructor] evaluación tras 250 episodios | choques 0/5 | casi 0.00 | brusc 1.4 | v 40.5 km/h | R 34.9
+[instructor] ep  250 | choques 1/10 | casi 0.10 | brusc 5.7 | interv 0.0 | R   26.58 | v 33.1 km/h | eps 0.02 | 10s
+[instructor] ep  260 | choques 0/10 | casi 0.10 | brusc 5.0 | interv 0.0 | R   39.02 | v 28.5 km/h | eps 0.02 | 10s
+[instructor] ep  270 | choques 1/10 | casi 0.10 | brusc 4.3 | interv 0.0 | R   13.14 | v 25.2 km/h | eps 0.02 | 10s
+[instructor] ep  280 | choques 1/10 | casi 0.30 | brusc 4.4 | interv 0.0 | R   24.95 | v 28.9 km/h | eps 0.02 | 13s
+[instructor] ep  290 | choques 0/10 | casi 0.10 | brusc 4.6 | interv 0.0 | R   39.04 | v 28.6 km/h | eps 0.02 | 11s
+[instructor] evaluación tras 300 episodios | choques 0/5 | casi 0.40 | brusc 3.0 | v 34.6 km/h | R 37.7
+[instructor] ep  300 | choques 2/10 | casi 0.20 | brusc 5.4 | interv 0.0 | R   13.40 | v 27.3 km/h | eps 0.02 | 13s
+[instructor] ep  310 | choques 1/10 | casi 0.10 | brusc 4.1 | interv 0.0 | R   21.48 | v 31.8 km/h | eps 0.02 | 22s
+[instructor] ep  320 | choques 0/10 | casi 0.20 | brusc 4.7 | interv 0.0 | R   39.65 | v 30.8 km/h | eps 0.02 | 14s
+[instructor] ep  330 | choques 0/10 | casi 0.00 | brusc 4.7 | interv 0.0 | R   35.70 | v 27.8 km/h | eps 0.02 | 12s
+[instructor] ep  340 | choques 0/10 | casi 0.00 | brusc 6.3 | interv 0.0 | R   40.30 | v 31.3 km/h | eps 0.02 | 13s
+[instructor] evaluación tras 350 episodios | choques 0/5 | casi 0.40 | brusc 0.6 | v 19.4 km/h | R 17.8
+[instructor] ep  350 | choques 0/10 | casi 0.10 | brusc 4.9 | interv 0.0 | R   37.18 | v 32.1 km/h | eps 0.02 | 13s
+[instructor] ep  360 | choques 0/10 | casi 0.10 | brusc 5.5 | interv 0.0 | R   39.49 | v 26.1 km/h | eps 0.02 | 23s
+[instructor] ep  370 | choques 0/10 | casi 0.20 | brusc 5.0 | interv 0.0 | R   41.20 | v 31.4 km/h | eps 0.02 | 12s
+[instructor] ep  380 | choques 0/10 | casi 0.00 | brusc 3.5 | interv 0.0 | R   35.64 | v 25.8 km/h | eps 0.02 | 11s
+[instructor] ep  390 | choques 0/10 | casi 0.10 | brusc 5.6 | interv 0.0 | R   33.30 | v 26.9 km/h | eps 0.02 | 13s
+[instructor] evaluación tras 400 episodios | choques 0/5 | casi 0.00 | brusc 3.8 | v 39.5 km/h | R 35.8
+[instructor] ep  400 | choques 0/10 | casi 0.10 | brusc 3.3 | interv 0.0 | R   35.86 | v 30.5 km/h | eps 0.02 | 11s

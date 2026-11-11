@@ -1,0 +1,91 @@
+episodio,fase,zona,clima,perfil,ruta,largo_ruta_m,pasos,tiempo_s,distancia_m,vel_media_kmh,choques,choque_con,casi_choques,pare_violados,pare_respetados,rojos_violados,frenadas_bruscas,pasos_exceso_vel,intervenciones_seguridad,intervenciones_instructor,llego,ttc_min,recompensa,epsilon,perdida,lambda_imitacion,segundos_reloj
+1,reactivo_reglas|despejado,corredor_calle72,despejado,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,535,133.75,930.7,25.05,0,,4,0,0,0,2,0,0,0,True,0.1,9.727,0.0,0.0,0.0,6.67
+2,reactivo_reglas|despejado,corredor_calle72,despejado,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,602.2,14.45,0,,0,0,0,0,1,0,0,0,False,9.42,18.5,0.0,0.0,0.0,18.36
+3,reactivo_reglas|despejado,calles79_85,despejado,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,600,150.0,1157.0,27.77,0,,0,0,0,0,6,0,2,0,False,1.64,37.756,0.0,0.0,0.0,8.86
+4,reactivo_reglas|despejado,calles79_85,despejado,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,582,145.5,1341.8,33.2,0,,1,0,0,0,7,0,0,0,True,0.38,35.597,0.0,0.0,0.0,18.89
+5,reactivo_reglas|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,568,142.0,1364.9,34.6,0,,0,0,1,0,3,2,0,0,True,2.8,50.061,0.0,0.0,0.0,21.8
+6,reactivo_reglas|despejado,calles79_85,despejado,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,85,21.25,81.2,13.75,1,f871,0,0,0,0,0,0,0,0,False,99.0,-98.658,0.0,0.0,0.0,1.11
+7,reactivo_reglas|despejado,calles79_85,despejado,automovil,Calle 84 → Carrera 59B,834.9,406,101.5,832.6,29.53,0,,0,0,0,0,0,0,0,0,True,4.88,47.372,0.0,0.0,0.0,6.16
+8,reactivo_reglas|despejado,calles79_85,despejado,automovil,Calle 81,710.6,341,85.25,709.3,29.95,0,,0,0,0,0,0,0,0,0,True,5.3,43.377,0.0,0.0,0.0,4.48
+9,reactivo_reglas|despejado,malecon_via40,despejado,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,521,130.25,1029.0,28.44,0,,0,0,0,0,0,0,0,0,True,3.45,61.285,0.0,0.0,0.0,7.79
+10,reactivo_reglas|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,571,142.75,1365.2,34.43,0,,0,0,1,0,2,2,0,0,True,2.99,52.991,0.0,0.0,0.0,5.8
+1,dqn_sin_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,562,140.5,931.8,23.88,0,,4,0,0,0,2,0,0,0,True,0.29,9.756,1.0,0.0,0.0,17.58
+2,dqn_sin_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,626.5,15.04,0,,0,0,0,0,1,0,0,0,False,5.28,20.406,1.0,0.0,0.0,5.7
+3,dqn_sin_guardrail|despejado,calles79_85,despejado,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,94,23.5,231.8,35.51,1,f399,1,0,0,0,1,0,0,0,False,0.18,-102.272,1.0,0.0,0.0,1.72
+4,dqn_sin_guardrail|despejado,calles79_85,despejado,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,111,27.75,314.7,40.83,1,obs_conos_8,0,0,0,0,1,0,0,0,False,4.94,-91.506,1.0,0.0,0.0,1.06
+5,dqn_sin_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,573,143.25,1363.8,34.27,0,,1,0,1,0,5,2,0,0,True,0.54,40.512,1.0,0.0,0.0,5.77
+6,dqn_sin_guardrail|despejado,calles79_85,despejado,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1126.8,27.04,0,,0,0,0,0,7,0,0,0,False,1.14,41.59,1.0,0.0,0.0,6.72
+7,dqn_sin_guardrail|despejado,calles79_85,despejado,automovil,Calle 84 → Carrera 59B,834.9,393,98.25,832.7,30.51,0,,0,0,0,0,0,0,0,0,True,1.44,47.345,1.0,0.0,0.0,4.97
+8,dqn_sin_guardrail|despejado,calles79_85,despejado,automovil,Calle 81,710.6,375,93.75,707.0,27.15,0,,1,0,0,0,5,0,0,0,True,0.96,32.26,1.0,0.0,0.0,14.86
+9,dqn_sin_guardrail|despejado,malecon_via40,despejado,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,567,141.75,1029.2,26.14,0,,1,0,0,0,4,0,0,0,True,0.87,50.748,1.0,0.0,0.0,7.18
+10,dqn_sin_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1327.4,31.86,0,,0,0,1,0,10,2,0,0,False,1.01,39.905,1.0,0.0,0.0,7.04
+1,dqn_con_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,562,140.5,931.8,23.87,0,,4,0,0,0,1,0,50,0,True,0.29,-40.245,1.0,0.0,0.0,5.3
+2,dqn_con_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,626.5,15.04,0,,0,0,0,0,1,0,0,0,False,5.44,20.406,1.0,0.0,0.0,16.77
+3,dqn_con_guardrail|despejado,calles79_85,despejado,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,94,23.5,231.8,35.51,1,f399,1,0,0,0,1,0,0,0,False,0.18,-102.272,1.0,0.0,0.0,1.67
+4,dqn_con_guardrail|despejado,calles79_85,despejado,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,111,27.75,314.7,40.83,1,obs_conos_8,0,0,0,0,1,0,0,0,False,4.94,-91.506,1.0,0.0,0.0,1.07
+5,dqn_con_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,578,144.5,1363.9,33.98,0,,1,0,1,0,5,2,0,0,True,0.32,40.202,1.0,0.0,0.0,5.68
+6,dqn_con_guardrail|despejado,calles79_85,despejado,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1125.6,27.01,0,,1,0,0,0,7,0,0,0,False,0.93,31.302,1.0,0.0,0.0,6.37
+7,dqn_con_guardrail|despejado,calles79_85,despejado,automovil,Calle 84 → Carrera 59B,834.9,392,98.0,830.3,30.5,0,,0,0,0,0,0,0,0,0,True,10.57,47.283,1.0,0.0,0.0,4.81
+8,dqn_con_guardrail|despejado,calles79_85,despejado,automovil,Calle 81,710.6,380,95.0,706.8,26.78,0,,0,0,0,0,2,0,0,0,True,2.25,42.635,1.0,0.0,0.0,4.24
+9,dqn_con_guardrail|despejado,malecon_via40,despejado,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,559,139.75,1029.4,26.52,0,,1,0,0,0,3,0,0,0,True,1.0,50.781,1.0,0.0,0.0,8.29
+10,dqn_con_guardrail|despejado,corredor_calle72,despejado,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,594,148.5,1364.8,33.09,0,,0,0,1,0,11,2,0,0,True,2.0,52.133,1.0,0.0,0.0,6.59
+1,reactivo_reglas|lluvia,corredor_calle72,lluvia,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,535,133.75,930.8,25.05,0,,4,0,0,0,6,0,0,0,True,0.2,8.57,0.0,0.0,0.0,16.1
+2,reactivo_reglas|lluvia,corredor_calle72,lluvia,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,616.2,14.79,0,,0,0,0,0,2,0,0,0,False,31.61,18.057,0.0,0.0,0.0,6.19
+3,reactivo_reglas|lluvia,calles79_85,lluvia,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,597,149.25,667.4,16.1,0,,0,0,0,0,9,0,2,0,False,2.28,22.678,0.0,0.0,0.0,7.86
+4,reactivo_reglas|lluvia,calles79_85,lluvia,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,528,132.0,1341.5,36.59,0,,1,0,0,0,5,0,0,0,True,0.49,35.763,0.0,0.0,0.0,6.07
+5,reactivo_reglas|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,563,140.75,1365.7,34.93,0,,0,0,1,0,5,3,0,0,True,2.6,49.367,0.0,0.0,0.0,14.98
+6,reactivo_reglas|lluvia,calles79_85,lluvia,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1181.3,28.35,0,,0,0,0,0,6,0,0,0,False,1.98,41.949,0.0,0.0,0.0,7.74
+7,reactivo_reglas|lluvia,calles79_85,lluvia,automovil,Calle 84 → Carrera 59B,834.9,552,138.0,830.1,21.65,0,,0,0,0,0,4,1,0,0,True,2.32,46.646,0.0,0.0,0.0,5.86
+8,reactivo_reglas|lluvia,calles79_85,lluvia,automovil,Calle 81,710.6,341,85.25,707.5,29.88,0,,1,0,0,0,2,0,0,0,True,0.2,33.013,0.0,0.0,0.0,3.4
+9,reactivo_reglas|lluvia,malecon_via40,lluvia,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,536,134.0,1029.2,27.65,0,,0,0,0,0,1,0,0,0,True,2.88,60.998,0.0,0.0,0.0,7.14
+10,reactivo_reglas|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,440,110.0,1113.1,36.43,1,f1183,1,0,0,0,6,0,1,0,False,0.18,-77.974,0.0,0.0,0.0,7.48
+1,dqn_sin_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,600,150.0,547.5,13.14,0,,0,0,0,0,0,0,0,0,False,10.89,25.995,1.0,0.0,0.0,5.49
+2,dqn_sin_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,640.0,15.36,0,,0,0,0,0,3,0,0,0,False,2.01,20.854,1.0,0.0,0.0,5.9
+3,dqn_sin_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,119,29.75,246.4,29.82,1,obs_peaton_7,1,0,0,0,6,0,0,0,False,0.0,-103.392,1.0,0.0,0.0,2.6
+4,dqn_sin_guardrail|lluvia,calles79_85,lluvia,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,556,139.0,1342.4,34.77,0,,0,0,0,0,15,0,0,0,True,1.94,44.898,1.0,0.0,0.0,5.88
+5,dqn_sin_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,587,146.75,1364.5,33.47,0,,0,0,1,0,8,3,0,0,True,2.55,49.119,1.0,0.0,0.0,15.71
+6,dqn_sin_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1181.3,28.35,0,,0,0,0,0,6,0,0,0,False,1.58,42.188,1.0,0.0,0.0,6.12
+7,dqn_sin_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 84 → Carrera 59B,834.9,542,135.5,830.2,22.06,0,,0,0,0,0,19,1,0,0,True,4.45,44.287,1.0,0.0,0.0,5.46
+8,dqn_sin_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 81,710.6,356,89.0,707.7,28.63,0,,0,0,0,0,0,0,0,0,True,6.24,43.528,1.0,0.0,0.0,3.68
+9,dqn_sin_guardrail|lluvia,malecon_via40,lluvia,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,527,131.75,1030.4,28.15,0,,0,0,0,0,0,0,0,0,True,2.27,61.438,1.0,0.0,0.0,6.86
+10,dqn_sin_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1143.3,27.44,0,,0,0,0,0,11,0,0,0,False,1.1,30.613,1.0,0.0,0.0,5.94
+1,dqn_con_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,600,150.0,547.5,13.14,0,,0,0,0,0,0,0,0,0,False,10.89,25.995,1.0,0.0,0.0,5.47
+2,dqn_con_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,640.0,15.36,0,,0,0,0,0,3,0,0,0,False,2.01,20.854,1.0,0.0,0.0,5.41
+3,dqn_con_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,119,29.75,246.4,29.82,1,obs_peaton_7,1,0,0,0,6,0,0,0,False,0.0,-103.392,1.0,0.0,0.0,2.32
+4,dqn_con_guardrail|lluvia,calles79_85,lluvia,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,555,138.75,1342.5,34.83,0,,0,0,0,0,17,0,4,0,True,1.94,40.701,1.0,0.0,0.0,5.8
+5,dqn_con_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,365,91.25,969.7,38.26,1,obs_iguana_17,1,0,0,0,1,0,0,0,False,0.12,-81.569,1.0,0.0,0.0,3.51
+6,dqn_con_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1220.3,29.29,0,,0,0,0,0,5,0,0,0,False,4.05,43.924,1.0,0.0,0.0,18.33
+7,dqn_con_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 84 → Carrera 59B,834.9,419,104.75,831.2,28.57,0,,0,0,0,0,21,1,0,0,True,3.35,45.142,1.0,0.0,0.0,4.34
+8,dqn_con_guardrail|lluvia,calles79_85,lluvia,automovil,Calle 81,710.6,349,87.25,709.2,29.26,0,,0,0,0,0,1,0,0,0,True,1.48,43.47,1.0,0.0,0.0,3.96
+9,dqn_con_guardrail|lluvia,malecon_via40,lluvia,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,525,131.25,1029.2,28.23,0,,0,0,0,0,1,0,0,0,True,2.86,61.206,1.0,0.0,0.0,6.43
+10,dqn_con_guardrail|lluvia,corredor_calle72,lluvia,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,589,147.25,1364.7,33.37,0,,1,0,1,0,9,3,1,0,True,0.87,39.637,1.0,0.0,0.0,6.15
+1,reactivo_reglas|noche,corredor_calle72,noche,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,535,133.75,930.8,25.05,0,,4,0,0,0,6,0,0,0,True,0.14,8.903,0.0,0.0,0.0,5.31
+2,reactivo_reglas|noche,corredor_calle72,noche,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,616.2,14.79,0,,0,0,0,0,1,0,0,0,False,38.14,19.157,0.0,0.0,0.0,5.38
+3,reactivo_reglas|noche,calles79_85,noche,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,600,150.0,1098.9,26.37,0,,0,0,0,0,4,0,0,0,False,2.1,38.409,0.0,0.0,0.0,6.72
+4,reactivo_reglas|noche,calles79_85,noche,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,528,132.0,1342.5,36.61,0,,0,0,0,0,1,0,0,0,True,1.65,47.072,0.0,0.0,0.0,5.44
+5,reactivo_reglas|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,559,139.75,1365.2,35.17,0,,1,0,1,0,4,0,0,0,True,0.19,40.096,0.0,0.0,0.0,5.93
+6,reactivo_reglas|noche,calles79_85,noche,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1176.6,28.24,0,,0,0,0,0,6,0,0,0,False,1.68,42.752,0.0,0.0,0.0,16.46
+7,reactivo_reglas|noche,calles79_85,noche,automovil,Calle 84 → Carrera 59B,834.9,574,143.5,830.2,20.83,0,,0,0,0,0,7,0,1,0,True,1.46,45.085,0.0,0.0,0.0,6.27
+8,reactivo_reglas|noche,calles79_85,noche,automovil,Calle 81,710.6,345,86.25,707.6,29.53,0,,0,0,0,0,0,0,0,0,True,3.21,43.348,0.0,0.0,0.0,3.74
+9,reactivo_reglas|noche,malecon_via40,noche,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,522,130.5,1030.5,28.43,0,,0,0,0,0,0,0,0,0,True,3.9,61.35,0.0,0.0,0.0,6.6
+10,reactivo_reglas|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,592,148.0,1364.7,33.19,0,,1,0,1,0,6,2,0,0,True,0.34,41.512,0.0,0.0,0.0,5.96
+1,dqn_sin_guardrail|noche,corredor_calle72,noche,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,537,134.25,932.1,24.99,0,,4,0,0,0,7,0,0,0,True,0.17,9.329,1.0,0.0,0.0,5.18
+2,dqn_sin_guardrail|noche,corredor_calle72,noche,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,614.3,14.74,0,,0,0,0,0,2,0,0,0,False,4.52,19.047,1.0,0.0,0.0,5.71
+3,dqn_sin_guardrail|noche,calles79_85,noche,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,600,150.0,1163.4,27.92,0,,2,0,0,0,26,0,0,0,False,0.01,18.312,1.0,0.0,0.0,7.49
+4,dqn_sin_guardrail|noche,calles79_85,noche,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,497,124.25,1341.6,38.87,0,,1,0,0,0,7,0,0,0,True,0.69,36.083,1.0,0.0,0.0,5.26
+5,dqn_sin_guardrail|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1231.6,29.56,0,,0,0,0,0,5,0,0,0,False,1.21,34.628,1.0,0.0,0.0,16.81
+6,dqn_sin_guardrail|noche,calles79_85,noche,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1166.5,28.0,0,,0,0,0,0,8,0,0,0,False,2.95,43.099,1.0,0.0,0.0,6.23
+7,dqn_sin_guardrail|noche,calles79_85,noche,automovil,Calle 84 → Carrera 59B,834.9,531,132.75,830.2,22.52,0,,0,0,0,0,10,0,0,0,True,1.59,46.302,1.0,0.0,0.0,5.67
+8,dqn_sin_guardrail|noche,calles79_85,noche,automovil,Calle 81,710.6,398,99.5,709.2,25.66,0,,0,0,0,0,8,0,0,0,True,3.25,42.639,1.0,0.0,0.0,4.17
+9,dqn_sin_guardrail|noche,malecon_via40,noche,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,556,139.0,1030.1,26.68,0,,1,0,0,0,1,0,0,0,True,0.86,50.512,1.0,0.0,0.0,6.82
+10,dqn_sin_guardrail|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1231.6,29.56,0,,0,0,0,0,4,0,0,0,False,1.29,36.287,1.0,0.0,0.0,6.82
+1,dqn_con_guardrail|noche,corredor_calle72,noche,automovil,Calle 75 → Carrera 62 → Calle 76,935.5,519,129.75,931.3,25.84,0,,4,0,0,0,6,0,0,0,True,0.17,9.104,1.0,0.0,0.0,16.29
+2,dqn_con_guardrail|noche,corredor_calle72,noche,automovil,Calle 74 → Carrera 59 → Calle 70 → Carrera 58,838.8,600,150.0,582.2,13.97,0,,0,0,0,0,2,0,0,0,False,35.3,17.095,1.0,0.0,0.0,5.88
+3,dqn_con_guardrail|noche,calles79_85,noche,automovil,Calle 79 → Carrera 66 → Calle 81 → Carrera 56,1446.3,600,150.0,1303.9,31.29,0,,0,0,0,0,10,0,1,0,False,1.98,42.488,1.0,0.0,0.0,7.59
+4,dqn_con_guardrail|noche,calles79_85,noche,automovil,Carrera 56 → Calle 79 → Carrera 59B,1345.5,590,147.5,1341.9,32.75,0,,1,0,0,0,10,0,0,0,True,0.1,34.992,1.0,0.0,0.0,6.25
+5,dqn_con_guardrail|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1231.7,29.56,0,,0,0,0,0,3,0,0,0,False,9.82,35.145,1.0,0.0,0.0,6.28
+6,dqn_con_guardrail|noche,calles79_85,noche,automovil,Calle 81 → Carrera 59 → Calle 84 → Carrera 68,1398.8,600,150.0,1188.0,28.51,0,,0,0,0,0,7,0,0,0,False,17.27,43.859,1.0,0.0,0.0,6.05
+7,dqn_con_guardrail|noche,calles79_85,noche,automovil,Calle 84 → Carrera 59B,834.9,440,110.0,830.3,27.17,0,,0,0,0,0,4,0,0,0,True,2.81,46.88,1.0,0.0,0.0,4.45
+8,dqn_con_guardrail|noche,calles79_85,noche,automovil,Calle 81,710.6,346,86.5,708.0,29.46,0,,0,0,0,0,6,0,0,0,True,5.54,42.807,1.0,0.0,0.0,13.0
+9,dqn_con_guardrail|noche,malecon_via40,noche,automovil,Rotonda Malecón 72 → Avenida del Río,1033.4,543,135.75,1029.8,27.31,0,,0,0,0,0,3,0,0,0,True,2.54,61.077,1.0,0.0,0.0,8.27
+10,dqn_con_guardrail|noche,corredor_calle72,noche,automovil,Calle 76 → Carrera 71 → Calle 74 → Carrera 68,1368.2,600,150.0,1231.7,29.56,0,,1,0,0,0,9,0,0,0,False,0.92,26.833,1.0,0.0,0.0,6.36

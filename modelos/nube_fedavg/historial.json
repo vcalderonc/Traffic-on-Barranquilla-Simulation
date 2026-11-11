@@ -1,0 +1,119 @@
+[
+  {
+    "version": 1,
+    "hora": "2026-11-11 00:59:39",
+    "aceptados": [
+      "taxi@malecon_via40",
+      "automovil@corredor_calle72",
+      "bus@calles79_85"
+    ],
+    "rechazados": [],
+    "pasos_por_vehiculo": {
+      "taxi@malecon_via40": 4943,
+      "automovil@corredor_calle72": 5418,
+      "bus@calles79_85": 5813
+    },
+    "metricas": {
+      "taxi@malecon_via40": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 40.709916666666665
+      },
+      "automovil@corredor_calle72": {
+        "tasa_choques": 0.25,
+        "recompensa_media": -7.140666666666665
+      },
+      "bus@calles79_85": {
+        "tasa_choques": 0.08333333333333333,
+        "recompensa_media": 24.594916666666666
+      }
+    }
+  },
+  {
+    "version": 2,
+    "hora": "2026-11-11 01:00:19",
+    "aceptados": [
+      "taxi@malecon_via40",
+      "automovil@corredor_calle72"
+    ],
+    "rechazados": [
+      "bus@calles79_85"
+    ],
+    "pasos_por_vehiculo": {
+      "taxi@malecon_via40": 4777,
+      "automovil@corredor_calle72": 5840,
+      "bus@calles79_85": 4948
+    },
+    "metricas": {
+      "taxi@malecon_via40": {
+        "tasa_choques": 0.16666666666666666,
+        "recompensa_media": 18.796833333333336
+      },
+      "automovil@corredor_calle72": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 32.446000000000005
+      },
+      "bus@calles79_85": {
+        "tasa_choques": 0.25,
+        "recompensa_media": 2.7253333333333334
+      }
+    }
+  },
+  {
+    "version": 3,
+    "hora": "2026-11-11 01:01:01",
+    "aceptados": [
+      "taxi@malecon_via40",
+      "automovil@corredor_calle72",
+      "bus@calles79_85"
+    ],
+    "rechazados": [],
+    "pasos_por_vehiculo": {
+      "taxi@malecon_via40": 5598,
+      "automovil@corredor_calle72": 5175,
+      "bus@calles79_85": 6091
+    },
+    "metricas": {
+      "taxi@malecon_via40": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 38.70966666666667
+      },
+      "automovil@corredor_calle72": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 34.059083333333334
+      },
+      "bus@calles79_85": {
+        "tasa_choques": 0.08333333333333333,
+        "recompensa_media": 30.164083333333334
+      }
+    }
+  },
+  {
+    "version": 4,
+    "hora": "2026-11-11 01:01:57",
+    "aceptados": [
+      "taxi@malecon_via40",
+      "automovil@corredor_calle72",
+      "bus@calles79_85"
+    ],
+    "rechazados": [],
+    "pasos_por_vehiculo": {
+      "taxi@malecon_via40": 5542,
+      "automovil@corredor_calle72": 5600,
+      "bus@calles79_85": 6055
+    },
+    "metricas": {
+      "taxi@malecon_via40": {
+        "tasa_choques": 0.08333333333333333,
+        "recompensa_media": 25.980500000000003
+      },
+      "automovil@corredor_calle72": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 38.72075
+      },
+      "bus@calles79_85": {
+        "tasa_choques": 0.0,
+        "recompensa_media": 38.647749999999995
+      }
+    }
+  }
+]

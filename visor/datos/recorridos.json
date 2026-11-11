@@ -1,0 +1,29 @@
+[
+ {
+  "archivo": "recorrido_1_despejado.json",
+  "clima": "despejado",
+  "ruta": "Rotonda Malecón 72 → Avenida del Río",
+  "duracion_s": 150.0,
+  "choques": 0,
+  "casi_choques": 0,
+  "eventos": 10
+ },
+ {
+  "archivo": "recorrido_2_lluvia.json",
+  "clima": "lluvia",
+  "ruta": "Vía 40",
+  "duracion_s": 85.0,
+  "choques": 0,
+  "casi_choques": 1,
+  "eventos": 9
+ },
+ {
+  "archivo": "recorrido_3_noche.json",
+  "clima": "noche",
+  "ruta": "Rotonda Malecón 72 → Avenida del Río",
+  "duracion_s": 150.0,
+  "choques": 0,
+  "casi_choques": 1,
+  "eventos": 10
+ }
+]

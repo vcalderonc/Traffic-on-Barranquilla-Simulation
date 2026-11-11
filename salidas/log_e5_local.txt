@@ -1,0 +1,12 @@
+[taxi@malecon_via40/ronda1] ep   12 | choques 0/12 | casi 0.25 | brusc 13.0 | interv 0.0 | R   40.71 | v 35.0 km/h | eps 0.05 | 89s
+[automovil@corredor_calle72/ronda1] ep   12 | choques 3/12 | casi 0.58 | brusc 12.2 | interv 0.0 | R   -7.14 | v 20.2 km/h | eps 0.05 | 85s
+[bus@calles79_85/ronda1] ep   12 | choques 1/12 | casi 0.50 | brusc 12.6 | interv 0.0 | R   24.59 | v 27.3 km/h | eps 0.04 | 86s
+[taxi@malecon_via40/ronda2] ep   24 | choques 1/12 | casi 0.08 | brusc 6.6 | interv 0.0 | R   33.18 | v 37.4 km/h | eps 0.02 | 18s
+[automovil@corredor_calle72/ronda2] ep   24 | choques 0/12 | casi 0.00 | brusc 11.1 | interv 0.0 | R   35.63 | v 25.1 km/h | eps 0.02 | 41s
+[bus@calles79_85/ronda2] ep   24 | choques 2/12 | casi 0.17 | brusc 4.9 | interv 0.0 | R   15.72 | v 27.2 km/h | eps 0.02 | 17s
+[taxi@malecon_via40/ronda3] ep   36 | choques 0/12 | casi 0.17 | brusc 4.9 | interv 0.0 | R   36.63 | v 33.4 km/h | eps 0.02 | 32s
+[automovil@corredor_calle72/ronda3] ep   36 | choques 0/12 | casi 0.00 | brusc 4.8 | interv 0.0 | R   39.99 | v 28.7 km/h | eps 0.02 | 29s
+[bus@calles79_85/ronda3] ep   36 | choques 1/12 | casi 0.08 | brusc 9.1 | interv 0.0 | R   24.84 | v 24.2 km/h | eps 0.02 | 21s
+[taxi@malecon_via40/ronda4] ep   48 | choques 2/12 | casi 0.58 | brusc 7.5 | interv 0.0 | R   16.44 | v 36.9 km/h | eps 0.02 | 28s
+[automovil@corredor_calle72/ronda4] ep   48 | choques 1/12 | casi 0.25 | brusc 11.6 | interv 0.0 | R   16.92 | v 20.5 km/h | eps 0.02 | 28s
+[bus@calles79_85/ronda4] ep   48 | choques 2/12 | casi 0.08 | brusc 8.2 | interv 0.0 | R   15.28 | v 25.5 km/h | eps 0.02 | 19s

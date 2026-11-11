@@ -45,6 +45,7 @@ class Decision:
     accion_ejecutada: int
     intervencion: str | None          # "seguridad" | "instructor" | None
     propuestas: dict = field(default_factory=dict)
+    accion_regla: int = -1            # lo que habría hecho el conductor de reglas (demostración)
 
 
 class Coordinador:
@@ -134,9 +135,13 @@ class VehiculoAutonomo:
         if dominante == "velocidad" and p_obs.motivo:
             motivo = f"{motivo} | {p_obs.motivo}"
         ejecutada = accion_mas_cercana(a, self.perfil, mm.clima.mu)
+        # demostración del conductor de reglas: IDM de Obstáculos, cotas de Señales y veto de Seguridad
+        b_max = self.perfil.frenado_max(mm.clima.mu)
+        a_regla = -b_max if self.seguridad.veto_teorico else min(p_obs.acel, p_sen.acel_max)
+        regla = accion_mas_cercana(max(-b_max, min(self.perfil.acel_max, a_regla)), self.perfil, mm.clima.mu)
         return Decision(a, carril, dominante, motivo, accion_politica, ejecutada, intervencion,
                         {"senales": p_sen.motivo, "obstaculos": p_obs.motivo, "navegacion": p_nav.motivo,
-                         "seguridad": p_seg.motivo, "velocidad": p_vel.motivo})
+                         "seguridad": p_seg.motivo, "velocidad": p_vel.motivo}, regla)
 
     # ---------------------------------------------------- actuadores
     def actuar(self, d: Decision) -> None:

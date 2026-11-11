@@ -115,8 +115,13 @@ guía (sección 15).
 
 ## 6. El agente que aprende (Velocidad)
 
-**Algoritmo:** Double DQN (van Hasselt et al., 2016) con red objetivo suave (τ = 0.01),
-pérdida de Huber, memoria de repetición de 60 000 transiciones y ε-greedy decreciente.
+**Algoritmo:** Double DQN (van Hasselt et al., 2016) con red objetivo suave (τ = 0.005),
+pérdida de Huber, **retornos de 3 pasos**, memoria de repetición de 60 000 transiciones,
+**memoria de incidentes** (los ~2 s previos a cada choque o casi-choque, 10 % de cada
+lote) y ε-greedy de 1.0 a 0.02. El instructor arranca con una **escuela de reglas**:
+imita también al conductor de reglas con una pérdida de margen (DQfD) cuyo peso baja de
+1 a 0.25 en 150 episodios y se queda ahí, como ancla (ver [DECISIONES.md](DECISIONES.md),
+D-18 y D-19).
 Red de 28 → 64 → 64 → 7, tasa de aprendizaje 3·10⁻⁴, implementada en NumPy (`aprendizaje/dqn.py`).
 
 **Observación (28 valores, normalizados y sin unidades del vehículo):**

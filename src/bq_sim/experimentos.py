@@ -40,13 +40,17 @@ def _opciones_fijas(semilla: int, n: int, zonas=None, climas=None, perfil=None):
 
 
 # ------------------------------------------------------------------- E1
-def e1_instructor(episodios: int = 400, semilla: int = 7) -> None:
+def e1_instructor(episodios: int = 400, semilla: int = 7, demostraciones: int = 150) -> None:
+    """El instructor aprende con refuerzo; durante los primeros ``demostraciones`` episodios
+    también imita al conductor de reglas (peso que decae de 1 a 0: escuela de reglas, DQfD).
+    Cada 50 episodios se evalúa sin exploración en 5 escenarios fijos."""
     env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=False, multiplicador_eventos=1.2)
-    ag = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_pasos=60_000), semilla=semilla)
+    ag = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_pasos=60_000, eps_final=0.02), semilla=semilla)
     reg = Registro(C.DIR_SALIDAS / "e1_instructor.csv")
     t0 = time.time()
     try:
-        entrenar(env, ag, episodios, reg, "instructor")
+        entrenar(env, ag, episodios, reg, "instructor", demostraciones_reglas=demostraciones,
+                 evaluar_cada=50, opciones_eval=_opciones_fijas(999, 5), episodios_eval=5)
     finally:
         reg.cerrar()
         ag.guardar(MODELO_INSTRUCTOR, {"perfil": "automovil", "episodios": episodios,
@@ -55,7 +59,7 @@ def e1_instructor(episodios: int = 400, semilla: int = 7) -> None:
 
 
 # ---------------------------------------------------------------- E2/E3
-def e23_aprendices(episodios: int = 60, semillas=(21, 22), perfil: str = "taxi") -> None:
+def e23_aprendices(episodios: int = 50, semillas=(21, 22), perfil: str = "taxi") -> None:
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
     reg = Registro(C.DIR_SALIDAS / "e23_aprendices.csv")
     for s in semillas:
@@ -79,7 +83,7 @@ def e23_aprendices(episodios: int = 60, semillas=(21, 22), perfil: str = "taxi")
 
 
 # ------------------------------------------------------------------- E4
-def e4_bus(episodios: int = 25, semilla: int = 31) -> None:
+def e4_bus(episodios: int = 20, semilla: int = 31) -> None:
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
     reg = Registro(C.DIR_SALIDAS / "e4_bus_normalizacion.csv")
     casos = [("automovil_referencia", "automovil", True), ("bus_normalizado", "bus", True),
@@ -99,12 +103,19 @@ def e4_bus(episodios: int = 25, semilla: int = 31) -> None:
 FLOTA = (("taxi", "malecon_via40"), ("automovil", "corredor_calle72"), ("bus", "calles79_85"))
 
 
-def e5_federado(modo: str = "fedavg", rondas: int = 4, episodios_locales: int = 15, semilla: int = 41) -> None:
-    """``modo`` = 'fedavg' (comparten por la nube) o 'local' (cada uno aprende solo)."""
+def e5_federado(modo: str = "fedavg", rondas: int = 4, episodios_locales: int = 12, semilla: int = 41) -> None:
+    """``modo`` = 'fedavg' (comparten por la nube) o 'local' (cada uno aprende solo).
+
+    Toda la flota arranca con el conocimiento (normalizado) del instructor y lo afina con
+    la experiencia de su zona; con FedAvg, además, comparte lo que aprende cada ronda.
+    """
     reg = Registro(C.DIR_SALIDAS / f"e5_federado_{modo}.csv")
-    hp = lambda: HiperDQN(eps_pasos=12_000)  # noqa: E731
+    maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
+    hp = lambda: HiperDQN(eps_inicial=0.10, eps_final=0.02, eps_pasos=8_000)  # noqa: E731
     flota = {f"{p}@{z}": AgenteDQN(N_OBS, N_ACC, hp(), semilla=semilla + i) for i, (p, z) in enumerate(FLOTA)}
-    base = BaseConocimiento(next(iter(flota.values())).obtener_parametros(), C.DIR_MODELOS / f"nube_{modo}")
+    for ag in flota.values():
+        ag.fijar_parametros(maestro.obtener_parametros())
+    base = BaseConocimiento(maestro.obtener_parametros(), C.DIR_MODELOS / f"nube_{modo}")
     # libsumo admite una sola simulación por proceso: los tres vehículos comparten el
     # mismo SUMO y cada uno conduce en su zona y con su perfil (opciones de reset).
     env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=False, multiplicador_eventos=1.2)
@@ -116,8 +127,9 @@ def e5_federado(modo: str = "fedavg", rondas: int = 4, episodios_locales: int = 
                 if modo == "fedavg" and r > 0:
                     ag.fijar_parametros(base.descargar())
                 perfil, zona = vid.split("@")
+                # ancla suave a las reglas (lambda 0.25), igual que el instructor al final de su formación
                 filas = entrenar(env, ag, episodios_locales, reg, f"{vid}/ronda{r + 1}",
-                                 opciones={"perfil": perfil, "zona": zona},
+                                 opciones={"perfil": perfil, "zona": zona}, demostraciones_reglas=1,
                                  inicio=r * episodios_locales, imprimir_cada=episodios_locales)
                 n = len(filas)
                 metricas = {"tasa_choques": sum(f["choques"] for f in filas) / n,
@@ -141,7 +153,7 @@ def e5_federado(modo: str = "fedavg", rondas: int = 4, episodios_locales: int = 
         reg.cerrar()
 
 
-def e5_evaluacion_cruzada(episodios: int = 8, semilla: int = 51) -> None:
+def e5_evaluacion_cruzada(episodios: int = 6, semilla: int = 51) -> None:
     """Cada modelo final se evalúa en TODAS las zonas (generalización)."""
     reg = Registro(C.DIR_SALIDAS / "e5_evaluacion_cruzada.csv")
     modelos = {"fedavg_global": C.DIR_MODELOS / "flota_fedavg_global.npz"}
@@ -162,7 +174,7 @@ def e5_evaluacion_cruzada(episodios: int = 8, semilla: int = 51) -> None:
 
 
 # ------------------------------------------------------------------- E6
-def e6_comparacion(episodios: int = 12, semilla: int = 61) -> None:
+def e6_comparacion(episodios: int = 10, semilla: int = 61) -> None:
     maestro, _ = AgenteDQN.cargar(MODELO_INSTRUCTOR)
     reg = Registro(C.DIR_SALIDAS / "e6_comparacion.csv")
     variantes = (("reactivo_reglas", None, True), ("dqn_sin_guardrail", maestro, False),

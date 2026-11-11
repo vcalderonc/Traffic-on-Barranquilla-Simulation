@@ -151,3 +151,57 @@ Sirve para la sustentación: si preguntan "¿por qué no X?", la respuesta está
 * **Por qué:** sin estos cambios el "mejor" agente para la recompensa no era un buen
   conductor. Las métricas de seguridad se reportan aparte de la recompensa justamente
   para detectar este tipo de desalineación (guía, sección 15.3).
+
+### D-18 · Retornos de n pasos, memoria de incidentes y "escuela de reglas" (corrección tras la versión 3)
+
+* **Problema detectado:** la versión 3 del instructor (`salidas/v3_greedy_inseguro/`)
+  parecía buena durante el entrenamiento (≈13 % de choques), pero al evaluarla **sin
+  exploración** chocaba en el 42 % de los episodios con cielo despejado, frente al 8 %
+  del conductor de reglas. Parte de su aparente seguridad venía de las acciones
+  aleatorias de exploración (que muchas veces son frenar). Causa de fondo: los choques
+  son rarísimos en la memoria (≈ 1 de cada 5 000 transiciones) y con retornos de un
+  paso el castigo tarda en llegar a las decisiones que lo provocaron.
+* **Decisiones:**
+  1. **Retornos de 3 pasos** (Sutton y Barto, 2018, cap. 7): el castigo de un choque
+     alcanza en una sola actualización a las decisiones de 0.75 s antes.
+  2. **Memoria de incidentes:** las transiciones de los ~2 s previos a cada choque o
+     casi-choque se copian a una memoria aparte y forman el 25 % de cada lote (idea
+     afín a la repetición priorizada de Schaul et al., 2016).
+  3. **Escuela de reglas (DQfD, Hester et al., 2018):** durante los primeros 150
+     episodios, el instructor suma a su pérdida un término de imitación del conductor
+     de reglas (IDM + Señales + veto de Seguridad) con peso que decae de 1 a 0. Después
+     aprende solo por refuerzo. Es como sacar el pase: primero se aprenden las reglas
+     y luego la experiencia afina.
+  4. **Evaluación sin exploración cada 50 episodios** (5 escenarios fijos), para que la
+     curva reportada sea la de la política real y no la de la política con ruido.
+  5. ε final 0.05 → 0.02.
+* **Por qué:** un instructor que solo es seguro "por suerte" no puede enseñar. La
+  comparación con el conductor de reglas en E6 dice si el aprendizaje aporta algo por
+  encima de las reglas que imitó al comienzo.
+
+### D-19 · Ancla a las reglas y memoria de incidentes moderada (corrección tras la versión 4)
+
+* **Problema detectado:** con D-18 tal cual (`salidas/v4_colapso_quieto/`), las
+  evaluaciones sin exploración mostraron un buen conductor a los 50 episodios
+  (0/5 choques, 29 km/h) pero, justo cuando el peso de imitación llegó a cero (episodio
+  150), la política pasó a **quedarse quieta** (0 km/h), aunque conducir le daba +34 de
+  recompensa frente a −3 de quedarse. La memoria de incidentes al 25 % del lote, sin
+  corrección del sesgo de muestreo, le hacía "ver" choques mucho más seguido de lo real
+  y sobrestimar el peligro de moverse.
+* **Decisiones:**
+  1. Memoria de incidentes al **10 %** del lote.
+  2. El peso de imitación de las reglas baja de 1 a **0.25** y se queda ahí (no llega a
+     cero). El refuerzo puede apartar la política de las reglas solo cuando la ventaja
+     en valor Q supera el margen: es una mejora **conservadora** de la política, como en
+     DQfD, donde la pérdida de demostración nunca se apaga.
+  3. Lo mismo para los aprendices con instructor: el consejo del instructor queda con
+     peso 0.25 después de la tutela (el doble comando sí se retira por completo).
+  4. En el experimento federado (E5) la flota arranca con el conocimiento del
+     instructor y lo afina en su zona, en vez de arrancar de cero.
+* **Lección para el informe:** el aprendizaje por refuerzo puro fue frágil en este
+  problema (4 versiones con fallas distintas: choques inevitables, *reward hacking*,
+  seguridad aparente por exploración y colapso por sesgo de muestreo). Cada falla se
+  detectó con una métrica o una evaluación concreta y se corrigió con una técnica
+  documentada. Esto respalda el principio de la guía: el aprendizaje se usa donde
+  aporta y se combina con reglas y guardrails que garantizan lo que no se puede dejar
+  al azar.
