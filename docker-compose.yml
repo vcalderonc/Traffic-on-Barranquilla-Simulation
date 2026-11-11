@@ -1,0 +1,42 @@
+# Aprendizaje federado local: 1 servidor Flower + 3 vehículos en 3 zonas de Barranquilla.
+# Red bridge propia para el tráfico gRPC entre contenedores.
+#   docker compose up --build
+services:
+  servidor:
+    build: .
+    command: ["python", "-m", "bq_sim.aprendizaje.flower_app", "servidor",
+              "--rondas", "3", "--clientes", "3", "--direccion", "0.0.0.0:8080",
+              "--inicial", "modelos/instructor_automovil.npz"]
+    volumes: ["./modelos:/app/modelos"]
+    networks: [flota]
+
+  taxi_malecon:
+    build: .
+    command: ["python", "-m", "bq_sim.aprendizaje.flower_app", "vehiculo", "--perfil", "taxi",
+              "--zona", "malecon_via40", "--semilla", "1", "--servidor", "servidor:8080"]
+    depends_on: [servidor]
+    volumes: ["./salidas:/app/salidas"]
+    networks: [flota]
+    deploy: {resources: {limits: {cpus: "1.0", memory: 700M}}}
+
+  auto_calle72:
+    build: .
+    command: ["python", "-m", "bq_sim.aprendizaje.flower_app", "vehiculo", "--perfil", "automovil",
+              "--zona", "corredor_calle72", "--semilla", "2", "--servidor", "servidor:8080"]
+    depends_on: [servidor]
+    volumes: ["./salidas:/app/salidas"]
+    networks: [flota]
+    deploy: {resources: {limits: {cpus: "1.0", memory: 700M}}}
+
+  bus_calle84:
+    build: .
+    command: ["python", "-m", "bq_sim.aprendizaje.flower_app", "vehiculo", "--perfil", "bus",
+              "--zona", "calles79_85", "--semilla", "3", "--servidor", "servidor:8080"]
+    depends_on: [servidor]
+    volumes: ["./salidas:/app/salidas"]
+    networks: [flota]
+    deploy: {resources: {limits: {cpus: "1.0", memory: 700M}}}
+
+networks:
+  flota:
+    driver: bridge

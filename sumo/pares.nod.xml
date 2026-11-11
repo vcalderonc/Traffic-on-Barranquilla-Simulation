@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nodes>
+    <node id="1167024933" type="priority_stop"/>
+    <node id="597621439" type="priority_stop"/>
+    <node id="1170547689" type="priority_stop"/>
+    <node id="1172165385" type="priority_stop"/>
+    <node id="cluster_11872597269_11872597284_13470032705_13470032706_#2more" type="priority_stop"/>
+    <node id="cluster_11872447212_11872447213_11872522168_11872597288_#6more" type="priority_stop"/>
+    <node id="1364120652" type="priority_stop"/>
+    <node id="597621393" type="priority_stop"/>
+    <node id="1364134876" type="priority_stop"/>
+    <node id="cluster_11904575661_597621454" type="priority_stop"/>
+    <node id="597621453" type="priority_stop"/>
+</nodes>

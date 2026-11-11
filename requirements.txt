@@ -1,0 +1,15 @@
+# Simulación de tráfico (SUMO desde PyPI: incluye sumo, sumo-gui, netconvert y randomTrips)
+eclipse-sumo==1.28.0
+libsumo==1.28.0
+traci==1.28.0
+sumolib==1.28.0
+pyproj>=3.6
+
+# Aprendizaje por refuerzo y análisis
+numpy>=2.0
+gymnasium>=1.0
+pandas>=2.2
+matplotlib>=3.9
+
+# Aprendizaje federado distribuido (opcional para los experimentos locales)
+flwr>=1.43

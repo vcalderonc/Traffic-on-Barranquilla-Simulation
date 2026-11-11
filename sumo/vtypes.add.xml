@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tipos de vehículos y objetos de la simulación de Barranquilla.
+     Mezcla de tráfico de fondo inspirada en la composición vehicular de la ciudad:
+     muchos automóviles particulares, taxis amarillos y motos; algunos buses y camiones. -->
+<additional>
+    <!-- ===== tráfico de fondo (lo controla SUMO con el modelo de Krauss) ===== -->
+    <vTypeDistribution id="mezcla">
+        <vType id="auto" vClass="passenger" probability="0.52" length="4.5" accel="2.6" decel="4.5" sigma="0.5" color="200,200,210" guiShape="passenger/sedan"/>
+        <vType id="taxi" vClass="taxi" probability="0.18" length="4.3" accel="2.6" decel="4.5" sigma="0.6" color="255,214,0" guiShape="taxi"/>
+        <vType id="moto" vClass="motorcycle" probability="0.18" length="2.1" width="0.8" accel="3.5" decel="6.0" sigma="0.6" maxSpeed="22" color="40,40,40" guiShape="motorcycle"/>
+        <vType id="bus" vClass="bus" probability="0.07" length="12" width="2.5" accel="1.2" decel="4.0" sigma="0.4" color="0,140,70" guiShape="bus"/>
+        <vType id="camion" vClass="truck" probability="0.05" length="9" width="2.5" accel="1.0" decel="4.0" sigma="0.4" color="180,70,50" guiShape="truck"/>
+    </vTypeDistribution>
+
+    <!-- ===== vehículos autónomos (los controlan los agentes vía TraCI) ===== -->
+    <vType id="ego_auto" vClass="passenger" length="4.5" width="1.8" accel="2.8" decel="7.5" emergencyDecel="7.5" maxSpeed="30" color="255,170,0" guiShape="passenger/hatchback"/>
+    <vType id="ego_taxi" vClass="taxi" length="4.3" width="1.7" accel="2.6" decel="7.0" emergencyDecel="7.0" maxSpeed="30" color="255,230,0" guiShape="taxi"/>
+    <vType id="ego_bus" vClass="bus" length="12" width="2.5" accel="1.2" decel="4.5" emergencyDecel="4.5" maxSpeed="25" color="0,170,90" guiShape="bus"/>
+    <vType id="ego_camion" vClass="truck" length="9" width="2.5" accel="1.0" decel="4.0" emergencyDecel="4.0" maxSpeed="25" color="200,60,40" guiShape="truck"/>
+
+    <!-- ===== obstáculos que no modela SUMO de forma nativa =====
+         Se insertan como "vehículos fantasma" detenidos para que todo el tráfico
+         reaccione a ellos; el visor 3D los dibuja como peatón, perro, iguana o conos. -->
+    <vType id="obs_peaton" vClass="ignoring" length="0.6" width="0.6" minGap="0.3" maxSpeed="3" color="230,80,160" guiShape="pedestrian"/>
+    <vType id="obs_perro" vClass="ignoring" length="0.9" width="0.4" minGap="0.3" maxSpeed="6" color="150,100,60" guiShape="pedestrian"/>
+    <vType id="obs_iguana" vClass="ignoring" length="0.7" width="0.3" minGap="0.2" maxSpeed="2" color="70,170,60" guiShape="pedestrian"/>
+    <vType id="obs_obra" vClass="ignoring" length="14" width="2.6" minGap="0.5" maxSpeed="1" color="255,110,0" guiShape="truck/trailer"/>
+</additional>

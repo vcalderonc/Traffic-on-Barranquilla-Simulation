@@ -1,0 +1,23 @@
+# Entorno de Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Salidas pesadas o regenerables de SUMO
+sumo/out/
+*.log
+salidas/tmp/
+
+# Editor / SO
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# OSM crudo (se versiona solo la copia comprimida barranquilla_malecon.osm.gz)
+data/osm/malecon_raw.osm
+sumo/tmp.net.xml.gz
+
+# Configuración local del editor/asistente
+.claude/

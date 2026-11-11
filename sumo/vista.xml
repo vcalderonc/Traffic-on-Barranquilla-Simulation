@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ajustes de sumo-gui para la demostración: vehículos con forma real y calles con nombre -->
+<viewsettings>
+    <scheme name="real world"/>
+    <delay value="60"/>
+</viewsettings>
