@@ -4,6 +4,14 @@ Todos los experimentos se corren con `python -m bq_sim <comando>` (ver el README
 dejan un CSV por episodio en `salidas/`. Las figuras están en `salidas/figuras/` y las
 tablas con intervalos de confianza en [salidas/RESUMEN.md](../salidas/RESUMEN.md).
 
+> **Limitación de E1–E7 (ver [D-26](DECISIONES.md)):** en estas corridas el tráfico de
+> fondo y los peatones de SUMO solo se generaban hasta t = 4 000 s, y los episodios se
+> encadenan sobre la misma simulación. Desde el episodio ~30 de cada experimento casi no
+> entraba tráfico nuevo, así que los resultados describen sobre todo la conducción con
+> semáforos, PARE, límites e imprevistos en vías poco congestionadas. La demanda ya está
+> corregida (flujos sin horizonte y horas pico); para medir el desempeño en tráfico denso
+> hay que continuar el entrenamiento y repetir los experimentos.
+
 ## Medidas de desempeño y dimensiones de evaluación de la guía (sección 15.1)
 
 | Dimensión | Indicador en este proyecto |

@@ -12,6 +12,7 @@ import numpy as np
 from gymnasium import spaces
 
 from .. import config as C
+from ..ciudad import es_hora_pico, factor_demanda
 from ..agentes.vehiculo import VehiculoAutonomo
 from ..agentes.velocidad import N_ACC, N_OBS
 from ..aprendizaje.perfiles import PERFILES
@@ -29,9 +30,9 @@ class ConduccionBarranquillaEnv(gym.Env):
                  perfil: str = "automovil", guardrail: bool = True, normalizado: bool = True,
                  perfil_origen: str | None = None, gui: bool = False, escala_demanda: float = 0.75,
                  multiplicador_eventos: float = 1.0, t_max_s: float = 150.0, ruido_sensores: bool = True,
-                 grabadora=None):
+                 grabadora=None, demanda_por_hora: bool = False, calentamiento_s: float = 240.0):
         super().__init__()
-        self.mundo = MundoSUMO(semilla, gui, escala_demanda)
+        self.mundo = MundoSUMO(semilla, gui, escala_demanda, calentamiento_s=calentamiento_s)
         self.eventos = GestorEventos(self.mundo, multiplicador=multiplicador_eventos)
         self.zonas = zonas or list(ZONAS)
         self.climas = climas or list(PESOS_CLIMA)
@@ -42,6 +43,8 @@ class ConduccionBarranquillaEnv(gym.Env):
         self.t_max_s = t_max_s
         self.ruido = ruido_sensores
         self.grabadora = grabadora
+        self.demanda_por_hora = demanda_por_hora  # horas pico: más tráfico según la hora del día
+        self.max_quieto_s = 45.0  # el episodio se corta si el vehículo pasa este tiempo detenido
         self.instructor = None
         self.hora, self.lluvia, self.ciclo, self.t_max_ep = 15.0, False, 0.0, t_max_s
         self.observation_space = spaces.Box(-2.0, 2.0, (N_OBS,), np.float32)
@@ -78,9 +81,24 @@ class ConduccionBarranquillaEnv(gym.Env):
             self.lluvia = clima == "lluvia"
             clima_obj = C.CLIMAS[clima]
         self.ciclo = float(options.get("ciclo_min_por_s", 0.0))  # minutos de día por segundo simulado
+        if options.get("demanda_por_hora", self.demanda_por_hora):
+            self.mundo.ajustar_demanda(factor_demanda(self.hora), hora=self.hora)
         self.t_max_ep = float(options.get("t_max_s", self.t_max_s))
         perfil = PERFILES[options.get("perfil", self.perfil_nombre)]
-        if via:
+        if options.get("partida") is not None:
+            # recorrido a la medida: desde donde el usuario quiera, pasando por monumentos
+            ruta_p = self.mundo.ruta_personalizada(options["partida"], options.get("pasar_por") or (),
+                                                   options.get("destino"), perfil.tipo_sumo,
+                                                   semilla=int(self.rng.integers(1 << 20)))
+            zona = "recorrido a la medida"
+            x, y = self.mundo.forma_carril(f"{ruta_p.aristas[0]}_0")[0]
+            lon, lat = self.mundo.lonlat(x, y)
+            self.eventos.mult_clase = next((z["eventos"] for z in ZONAS.values()
+                                            if self.mundo.traci.edge.getStreetName(ruta_p.aristas[0]) in z["calles"]), {})
+            rutas = [ruta_p]
+            # que alcance a llegar (6 m/s de promedio, con semáforos y trancones)
+            self.t_max_ep = max(self.t_max_ep, ruta_p.largo_m / 6.0 + 120.0)
+        elif via:
             zona = f"vía: {via}"
             self.eventos.mult_clase = next((z["eventos"] for z in ZONAS.values() if via in z["calles"]), {})
             rutas = self.mundo.rutas_por_via(via, tipo=perfil.tipo_sumo)
@@ -107,7 +125,8 @@ class ConduccionBarranquillaEnv(gym.Env):
         obs = self.veh.observar()
         self.info_ep = {"zona": zona, "clima": clima, "perfil": perfil.nombre, "ruta": ruta.desc,
                         "largo_ruta_m": round(ruta.largo_m, 1), "ego": self.ego,
-                        "hora": round(self.hora, 2), "lluvia": self.lluvia}
+                        "hora": round(self.hora, 2), "lluvia": self.lluvia,
+                        "hora_pico": es_hora_pico(self.hora), "factor_demanda": round(self.mundo.factor_hora, 2)}
         if self.grabadora is not None:
             self.grabadora.inicio_episodio(self, self.info_ep)
         return obs, dict(self.info_ep)
@@ -126,6 +145,8 @@ class ConduccionBarranquillaEnv(gym.Env):
             if self.eval.met.pasos % 8 == 0:
                 nuevo = C.clima_dinamico(self.hora, self.lluvia)
                 veh.clima = veh.percepcion.clima = nuevo
+            if self.demanda_por_hora and self.eval.met.pasos % 120 == 0:
+                self.mundo.ajustar_demanda(factor_demanda(self.hora), recalentar=False, hora=self.hora)
         colisiones = []
         for c in tr.simulation.getCollisions():
             if c.collider == self.ego:
@@ -139,15 +160,19 @@ class ConduccionBarranquillaEnv(gym.Env):
         if en_red:
             obs = veh.observar()
             mm_despues = veh.mm
-            # atropello de peatones de SUMO (andenes/cebras): verificación geométrica
+            # atropello de peatones de SUMO: verificación geométrica, solo si el peatón está
+            # donde circulan carros (cebra o calzada sin andén). En las esquinas, la curva de
+            # giro de la red pasa a menos de 1.5 m del andén y un peatón quieto en el andén
+            # contaba como atropellado aunque el carro no lo tocara (D-34)
             if not colisiones:
                 for o in mm_despues.verdad:
-                    if o.clase == "peaton" and o.en_trayectoria and not o.id.startswith("obs_") and o.s < 0.3:
+                    if o.clase == "peaton" and o.en_trayectoria and not o.id.startswith("obs_") and o.s < 0.3 \
+                            and self._peaton_en_calzada(o.id):
                         colisiones.append(o.id)
                         break
         rec, terminado = self.eval.paso(self.mundo, mm_antes, mm_despues, d, colisiones, llego)
         self._quieto = self._quieto + 1 if (mm_despues is not None and mm_despues.v < 0.1) else 0
-        atascado = self._quieto * self.mundo.dt > 45.0  # bloqueado (p. ej. trancón o PARE sin hueco)
+        atascado = self._quieto * self.mundo.dt > self.max_quieto_s  # bloqueado (trancón o PARE sin hueco)
         truncado = (not terminado) and ((self.mundo.t - self.t0) >= self.t_max_ep or not en_red or atascado)
         if self.grabadora is not None:
             self.grabadora.paso(self, d, rec)
@@ -160,9 +185,28 @@ class ConduccionBarranquillaEnv(gym.Env):
                 self.grabadora.fin_episodio(self)
         info = {"decision": d, "accion_ejecutada": d.accion_ejecutada}
         if terminado or truncado:
-            info["metricas"] = {**self.info_ep, **self.eval.met.resumen()}
+            info["metricas"] = {**self.info_ep, **self.eval.met.resumen(),
+                                "adelantamientos": veh.navegacion.adelantamientos}
             self.ego = None
         return obs, float(rec), bool(terminado), bool(truncado), info
+
+    def _peaton_en_calzada(self, pid: str) -> bool:
+        """¿El peatón está en una cebra o en una calzada sin andén (no en un andén o esquina)?"""
+        try:
+            tramo = self.mundo.traci.person.getRoadID(pid)
+        except Exception:
+            return True
+        if not tramo:
+            return True
+        if tramo.startswith(":"):  # dentro del cruce: ":<nodo>_c<k>" es cebra, ":<nodo>_w<k>" es esquina
+            return tramo.rsplit("_", 1)[-1].startswith("c")
+        cache = self.__dict__.setdefault("_tramo_con_anden", {})
+        if tramo not in cache:
+            tr = self.mundo.traci
+            carriles = [f"{tramo}_{k}" for k in range(tr.edge.getLaneNumber(tramo))]
+            cache[tramo] = any(not self.mundo.permite_autos(c) and "pedestrian" in tr.lane.getAllowed(c)
+                               for c in carriles)
+        return not cache[tramo]
 
     def close(self):
         self.mundo.cerrar()

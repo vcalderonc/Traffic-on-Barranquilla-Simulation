@@ -12,17 +12,20 @@ prioridades. El agente de Velocidad aprende con Double DQN; un vehículo ya entr
 (el **instructor**) enseña a taxis, autos y buses aprendices, y la flota comparte lo
 aprendido con aprendizaje federado (FedAvg / Flower). Incluye un **visor 3D** en el
 navegador con el Malecón, La Luna del Río, las estatuas de Shakira y Sofía Vergara, el
-Caimán del Río, los Buenavista con pantallas tipo Times Square, ciclo día-noche con el
-atardecer rosado de la ciudad y una **simulación en vivo** donde el usuario elige la vía,
-la hora, la lluvia y quién conduce.
+Caimán del Río, los Buenavista con pantallas tipo Times Square, la Ventana al Mundo, la
+Aleta del Tiburón y la Puerta de Oro iluminadas, ciclo día-noche con el atardecer rosado
+de la ciudad y una **simulación en vivo** donde el usuario elige la vía o arma su propio
+recorrido (partida, monumentos sobre glorietas y llegada), la hora (con horas pico), la
+lluvia y quién conduce. El instructor es un Porsche 911 GT color cherry blossom.
 
 | | |
 |---|---|
 | Escenario | Red real OSM → SUMO: 6 754 tramos, 146 semáforos, 22 PARE, aceras, cebras y 23 543 edificios |
-| Tráfico | autos, taxis, motos, buses y camiones + peatones; flujos en los grandes corredores (≈ 490 vehículos a la vez) |
-| Imprevistos | peatones que cruzan a mitad de cuadra, perros, iguanas, carriles con conos, frenadas súbitas |
+| Tráfico | compactos, sedanes, camionetas, pick-ups, taxis, motos, busetas y camiones + peatones y paseantes; flujos en los grandes corredores; **horas pico** (≈ 1 100 a 1 900 vehículos y ~1 100 personas a la vez) |
+| Imprevistos | peatones que cruzan a mitad de cuadra, perros, iguanas, carriles con conos, frenadas súbitas y **vendedores ambulantes en los semáforos** |
 | Clima y hora | hora del día con ciclo día-noche (la luz cambia el alcance de los sensores) y lluvia (menos fricción y alcance) |
-| Vías para manejar | Malecón (Av. del Río), Vía 40, Av. Calle 72, Calles 76, 79, 84 y 98 (Buenavista), Carreras 53 y 51B, Av. Carrera 46 |
+| Vías para manejar | Malecón (Av. del Río), Vía 40, Av. Calle 72, Calles 76, 79, 84 y 98 (Buenavista), Carreras 53 y 51B, Av. Carrera 46, o un recorrido a la medida desde cualquier punto pasando por la Ventana al Mundo, la Aleta del Tiburón, la Puerta de Oro, el Caimán del Río o La Luna del Río |
+| Conducción | seguir el carril, semáforos, PARE, esquivar obstáculos y **adelantar por la izquierda** con verificación del radar trasero |
 | Agentes por vehículo | 6 + Coordinador (caso "Conducción urbana inteligente" de la tabla del profesor) |
 | Aprendizaje | Double DQN en NumPy, interfaz Gymnasium, recompensas del Stack Tech |
 | Enseñanza | instructor con *doble comando* + demostraciones + transferencia normalizada |
@@ -42,6 +45,11 @@ Detalle, figuras e intervalos de confianza en [docs/EXPERIMENTOS.md](docs/EXPERI
 | E5 · Flota federada en 3 zonas | El modelo FedAvg **no choca en ninguna zona** (0/18) y supera a los modelos locales, que fallan fuera de su zona; la nube rechazó un aporte dañino del bus |
 | E6 · Reglas vs. DQN vs. híbrido | Seguridad estadísticamente equivalente: el aprendizaje alcanza a las reglas pero no las supera; su valor está en la transferencia |
 | E7 · Red ampliada y más tráfico | El instructor se transfiere a vías y horas que no vio: 1 choque en 12 episodios, igual que las reglas, y más rápido (32 vs 28 km/h) |
+
+> **Limitación encontrada (D-26):** en E1–E7 los viajes de fondo solo se generaban hasta
+> t = 4 000 s y los episodios se encadenan en la misma corrida de SUMO, así que después de
+> los primeros ~30 episodios de cada experimento casi no había tráfico de fondo. Ya está
+> corregido (flujos sin horizonte); los resultados de la tabla valen para esa condición.
 
 La historia completa del entrenamiento (cuatro versiones fallidas, cómo se detectó cada
 falla y cómo se corrigió) está en [docs/DECISIONES.md](docs/DECISIONES.md), D-11 a D-19.
@@ -76,8 +84,12 @@ La red, la demanda y los modelos entrenados ya vienen en el repositorio, así qu
 puede ir directo a ver resultados.
 
 **Simulación en vivo** (recomendado): abre http://localhost:8000, pestaña *Simulación en
-vivo*, elige la vía, la hora (o activa el ciclo día-noche), la lluvia y quién conduce, y
-pulsa *Conducir*. La primera vez tarda ~30 s mientras SUMO arranca.
+vivo*. En *Recorrido* elige "Por una vía" o "A la medida": partida (un lugar o
+*Elegir en el mapa* y clic sobre una vía), los monumentos por los que quieres pasar (en
+el orden en que los marques) y la llegada. Ajusta la hora (las horas pico traen más
+tráfico), el ciclo día-noche, la lluvia y quién conduce, y pulsa *Conducir*. Al arrancar,
+SUMO llena la ciudad de tráfico (~1 min); con un cambio grande de hora, el recorrido tarda
+unos segundos más en empezar.
 
 ```powershell
 python -m bq_sim vivo
@@ -101,14 +113,17 @@ python -m bq_sim gui --via "Calle 98" --hora 18 --lluvia
 python -m bq_sim instructor --continuar --episodios 100
 ```
 
-En el visor: **H** oculta los paneles para presentar, la barra de *Hora* cambia la luz
-y el botón *Buenavista* lleva la cámara a la zona de las pantallas.
+En el visor: **H** oculta los paneles para presentar, **C** pone la cámara en la cabina del
+Porsche, la barra de *Hora* cambia la luz, los botones *Malecón*, *Buenavista*, *Ventana
+al Mundo* y *Aleta del Tiburón* llevan la cámara a esos lugares y *Mapa* muestra toda la
+zona. *Gráficos* elige la calidad (Alta: sombras y reflejos; se baja sola si el equipo va
+lento).
 
 Para regenerar todo desde cero (o `bash scripts/correr_experimentos.sh` para E2–E6 + visor + gráficas, ~1 h):
 
 ```powershell
 python -m bq_sim red --descargar      # OSM -> red SUMO con PARE (necesita internet)
-python -m bq_sim demanda              # tráfico de fondo y peatones
+python -m bq_sim demanda              # tráfico de fondo, peatones y paseantes (flujos sin horizonte)
 python -m bq_sim instructor           # E1: entrena el vehículo instructor (~25 min en un portátil de 2 núcleos)
 python -m bq_sim aprendices           # E2/E3
 python -m bq_sim bus                  # E4
@@ -117,7 +132,7 @@ python -m bq_sim federado --modo fedavg
 python -m bq_sim cruzada              # E5: evaluación cruzada
 python -m bq_sim comparacion          # E6
 python -m bq_sim graficas             # figuras y salidas/RESUMEN.md
-python -m bq_sim visor                # ciudad + recorridos para el visor 3D
+python -m bq_sim visor                # ciudad + recorridos para el visor 3D (varios minutos cada uno)
 ```
 
 Aprendizaje federado distribuido con Flower (una terminal por proceso):
@@ -137,15 +152,16 @@ O con Docker: `docker compose up --build` (los archivos están listos, pero Dock
 src/bq_sim/
   config.py              parámetros del modelo (recompensas, climas, tasas de imprevistos)
   red.py                 OSM -> SUMO (netconvert) y PARE
-  demanda.py             tráfico de fondo y peatones (randomTrips)
+  demanda.py             tráfico de fondo (flujos de Poisson) y pares a pie de peatones y paseantes
+  ciudad.py              lugares, horas pico y estrato aproximado por barrio
   entorno/
-    mundo.py             conexión con SUMO, rutas por zona, geometría del camino
-    eventos.py           imprevistos estocásticos (peatón, perro, iguana, conos, frenada)
+    mundo.py             conexión con SUMO, horas pico, peatones, rutas por zona y a la medida
+    eventos.py           imprevistos estocásticos (peatón, perro, iguana, conos, frenada, vendedor)
     evaluador.py         recompensa y métricas (crítico)
     gym_env.py           entorno Gymnasium
   agentes/
     percepcion.py        sensores virtuales + rastreador
-    especialistas.py     Señales, Obstáculos, Navegación, Seguridad
+    especialistas.py     Señales, Obstáculos, Navegación (esquivar y adelantar), Seguridad
     velocidad.py         observación normalizada y agente de Velocidad
     vehiculo.py          Coordinador y vehículo autónomo
   aprendizaje/
@@ -161,10 +177,11 @@ src/bq_sim/
   servidor.py            simulación en vivo para el navegador (Server-Sent Events)
 data/osm/                extracto de OpenStreetMap (comprimido)
 data/hitos.json          lugares emblemáticos con su ubicación en OSM
+data/estratos.json       estrato aproximado de 51 barrios
 sumo/                    red, tipos de vehículo, demanda y configuración de SUMO
 modelos/                 redes entrenadas (.npz)
 salidas/                 CSV por episodio, figuras y RESUMEN.md
-visor/                   visor 3D (index.html + app.js + datos/)
+visor/                   visor 3D (index.html, app.js, modelos.js: carros y personas, hitos.js: monumentos, datos/)
 ```
 
 ## Créditos y licencias de datos

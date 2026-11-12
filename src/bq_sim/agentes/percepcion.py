@@ -31,7 +31,10 @@ def clase_de_tipo(tipo: str) -> tuple[str, str]:
     if tipo.startswith("obs_"):
         sub = tipo[4:]
         return {"peaton": ("peaton", "peaton"), "perro": ("animal", "perro"),
-                "iguana": ("animal", "iguana"), "obra": ("obra", "conos")}.get(sub, ("obra", sub))
+                "iguana": ("animal", "iguana"), "obra": ("obra", "conos"),
+                "vendedor": ("peaton", "vendedor")}.get(sub, ("obra", sub))
+    if "pickup" in tipo or "cybertruck" in tipo:
+        return "vehiculo", "camioneta"
     for clave in ("moto", "bus", "camion", "taxi"):
         if clave in tipo:
             return "vehiculo", clave
@@ -112,6 +115,7 @@ class AgentePercepcion:
         tr = self.m.traci
         tc = self.m.tc
         out: list[Objeto] = []
+        self.traseros = []  # radar trasero: vehículos que vienen detrás (para cambiar de carril)
         ctx = tr.vehicle.getContextSubscriptionResults(self.ego) or {}
         for vid, var in ctx.items():
             if vid == self.ego:
@@ -124,7 +128,14 @@ class AgentePercepcion:
             s1, lat1, rumbo = proyectar(camino.poli, x, y)
             s2, lat2, _ = proyectar(camino.poli, x - largo * hx, y - largo * hy)
             s = min(s1, s2)
-            if s < -3.0 or s > 120.0:
+            if s < -3.0:
+                if s >= -45.0 and clase == "vehiculo":
+                    lateral = 0.5 * (lat1 + lat2)
+                    v_obj = var[tc.VAR_SPEED] * (hx * math.cos(rumbo) + hy * math.sin(rumbo))
+                    self.traseros.append(Objeto(vid, clase, sub, max(s1, s2), lateral, v_ego - v_obj,
+                                                ancho, False, False, 1.0, x, y))
+                continue
+            if s > 120.0:
                 continue
             lateral = 0.5 * (lat1 + lat2)
             v_obj = var[tc.VAR_SPEED] * (hx * math.cos(rumbo) + hy * math.sin(rumbo))
@@ -234,4 +245,5 @@ class AgentePercepcion:
             limites_proximos=self._limites(camino), detectados=detectados, verdad=reales,
             senal=self._senal(camino), camino=camino, carril_idx=tr.vehicle.getLaneIndex(self.ego),
             n_carriles_auto=n_autos, clima=self.clima, x=x, y=y, angulo=tr.vehicle.getAngle(self.ego),
+            extras={"traseros": self.traseros},
         )

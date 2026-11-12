@@ -592,7 +592,7 @@
      11.0331831
     ]
    ],
-   "fuente": "OSM vía 815351398",
+   "fuente": "OSM vía 815351398; dos torres: una de mosaico de colores y otra en tonos azules (encargo de Tecnoglass), iluminada de noche",
    "altura_m": 47.0,
    "osm": {
     "tipo": "way",
@@ -601,8 +601,8 @@
   },
   {
    "id": "ventana_campeones",
-   "tipo": "ventana_campeones",
-   "nombre": "Ventana de Campeones",
+   "tipo": "aleta_tiburon",
+   "nombre": "Ventana de Campeones · Aleta del Tiburón",
    "poligono": [
     [
      -74.7726597,
@@ -633,11 +633,60 @@
      10.9983896
     ]
    ],
-   "fuente": "OSM vía 907107216",
+   "fuente": "OSM vía 907107216; también llamada Aleta del Tiburón: vidrio (~600 paneles) con show de luces LED (rojo y blanco de Junior, tricolor de la Selección)",
    "altura_m": 33.0,
    "osm": {
     "tipo": "way",
     "id": 907107216
+   }
+  },
+  {
+   "id": "puerta_oro",
+   "tipo": "puerta_oro",
+   "nombre": "Centro de Eventos Puerta de Oro",
+   "poligono": [
+    [
+     -74.798987,
+     11.0241863
+    ],
+    [
+     -74.7999387,
+     11.0226739
+    ],
+    [
+     -74.799992,
+     11.0227095
+    ],
+    [
+     -74.8000568,
+     11.0227375
+    ],
+    [
+     -74.8004704,
+     11.0232621
+    ],
+    [
+     -74.8005661,
+     11.0233834
+    ],
+    [
+     -74.8006973,
+     11.0235219
+    ],
+    [
+     -74.7997426,
+     11.0247596
+    ],
+    [
+     -74.798987,
+     11.0241863
+    ]
+   ],
+   "fuente": "OSM vía 1326352281 (Centro de Convenciones Puerta de Oro)",
+   "altura_m": 22.0,
+   "osm": {
+    "tipo": "way",
+    "id": 1326352281
    }
   }
  ]

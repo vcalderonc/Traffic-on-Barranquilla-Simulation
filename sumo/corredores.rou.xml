@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes>
     <!-- Vía 40 (ida, 5426 m) -->
-    <flow id="corr_0" type="mezcla" begin="0" end="4000" vehsPerHour="600" from="693821867#0" to="908632600#1" departLane="best" departSpeed="max"/>
+    <flow id="corr_0" type="mezcla" begin="0" end="400000" period="exp(0.16667)" from="693821867#0" to="908632600#1" departLane="best" departSpeed="max"/>
     <!-- Vía 40 (vuelta, 5502 m) -->
-    <flow id="corr_1" type="mezcla" begin="0" end="4000" vehsPerHour="600" from="998587331" to="1535335101#0" departLane="best" departSpeed="max"/>
+    <flow id="corr_1" type="mezcla" begin="0" end="400000" period="exp(0.16667)" from="998587331" to="1535335101#0" departLane="best" departSpeed="max"/>
     <!-- Avenida del Río (ida, 5136 m) -->
-    <flow id="corr_2" type="mezcla" begin="0" end="4000" vehsPerHour="260" from="227443601#0" to="621219326#3" departLane="best" departSpeed="max"/>
+    <flow id="corr_2" type="mezcla" begin="0" end="400000" period="exp(0.07222)" from="227443601#0" to="621219326#3" departLane="best" departSpeed="max"/>
     <!-- Avenida del Río (vuelta, 5304 m) -->
-    <flow id="corr_3" type="mezcla" begin="0" end="4000" vehsPerHour="260" from="621219326#4" to="180200681" departLane="best" departSpeed="max"/>
+    <flow id="corr_3" type="mezcla" begin="0" end="400000" period="exp(0.07222)" from="621219326#4" to="180200681" departLane="best" departSpeed="max"/>
     <!-- Avenida Calle 72 (ida, 2568 m) -->
-    <flow id="corr_4" type="mezcla" begin="0" end="4000" vehsPerHour="400" from="944090534#0" to="917597314#1" departLane="best" departSpeed="max"/>
+    <flow id="corr_4" type="mezcla" begin="0" end="400000" period="exp(0.11111)" from="944090534#0" to="917597314#1" departLane="best" departSpeed="max"/>
     <!-- Avenida Calle 72 (vuelta, 2571 m) -->
-    <flow id="corr_5" type="mezcla" begin="0" end="4000" vehsPerHour="400" from="1299398839#0" to="742898323#2" departLane="best" departSpeed="max"/>
+    <flow id="corr_5" type="mezcla" begin="0" end="400000" period="exp(0.11111)" from="1299398839#0" to="742898323#2" departLane="best" departSpeed="max"/>
     <!-- Avenida Carrera 46 (ida, 3408 m) -->
-    <flow id="corr_6" type="mezcla" begin="0" end="4000" vehsPerHour="400" from="289560854" to="825050426#3" departLane="best" departSpeed="max"/>
+    <flow id="corr_6" type="mezcla" begin="0" end="400000" period="exp(0.11111)" from="289560854" to="825050426#3" departLane="best" departSpeed="max"/>
     <!-- Avenida Carrera 46 (vuelta, 3372 m) -->
-    <flow id="corr_7" type="mezcla" begin="0" end="4000" vehsPerHour="400" from="375279897#0" to="-289560854" departLane="best" departSpeed="max"/>
+    <flow id="corr_7" type="mezcla" begin="0" end="400000" period="exp(0.11111)" from="375279897#0" to="-289560854" departLane="best" departSpeed="max"/>
     <!-- Calle 84 (ida, 812 m) -->
-    <flow id="corr_8" type="mezcla" begin="0" end="4000" vehsPerHour="300" from="104788613#0" to="-104788638#0" departLane="best" departSpeed="max"/>
+    <flow id="corr_8" type="mezcla" begin="0" end="400000" period="exp(0.08333)" from="104788613#0" to="-104788638#0" departLane="best" departSpeed="max"/>
     <!-- Calle 84 (vuelta, 3748 m) -->
-    <flow id="corr_9" type="mezcla" begin="0" end="4000" vehsPerHour="300" from="554775119#0" to="-104788613#0" departLane="best" departSpeed="max"/>
+    <flow id="corr_9" type="mezcla" begin="0" end="400000" period="exp(0.08333)" from="554775119#0" to="-104788613#0" departLane="best" departSpeed="max"/>
     <!-- Calle 98 (vuelta, 4078 m) -->
-    <flow id="corr_10" type="mezcla" begin="0" end="4000" vehsPerHour="350" from="1535335102#1" to="1005162528" departLane="best" departSpeed="max"/>
+    <flow id="corr_10" type="mezcla" begin="0" end="400000" period="exp(0.09722)" from="1535335102#1" to="1005162528" departLane="best" departSpeed="max"/>
     <!-- Carrera 53 (vuelta, 4994 m) -->
-    <flow id="corr_11" type="mezcla" begin="0" end="4000" vehsPerHour="350" from="404954000#0" to="1075433026" departLane="best" departSpeed="max"/>
+    <flow id="corr_11" type="mezcla" begin="0" end="400000" period="exp(0.09722)" from="404954000#0" to="1075433026" departLane="best" departSpeed="max"/>
     <!-- Carrera 51B (ida, 1547 m) -->
-    <flow id="corr_12" type="mezcla" begin="0" end="4000" vehsPerHour="300" from="1449694975#0" to="34377021#3" departLane="best" departSpeed="max"/>
+    <flow id="corr_12" type="mezcla" begin="0" end="400000" period="exp(0.08333)" from="1449694975#0" to="34377021#3" departLane="best" departSpeed="max"/>
     <!-- Carrera 51B (vuelta, 3366 m) -->
-    <flow id="corr_13" type="mezcla" begin="0" end="4000" vehsPerHour="300" from="48960515#0" to="106548147#1" departLane="best" departSpeed="max"/>
+    <flow id="corr_13" type="mezcla" begin="0" end="400000" period="exp(0.08333)" from="48960515#0" to="106548147#1" departLane="best" departSpeed="max"/>
     <!-- Calle 79 (ida, 2902 m) -->
-    <flow id="corr_14" type="mezcla" begin="0" end="4000" vehsPerHour="250" from="106793667#0" to="561843840#1" departLane="best" departSpeed="max"/>
+    <flow id="corr_14" type="mezcla" begin="0" end="400000" period="exp(0.06944)" from="106793667#0" to="561843840#1" departLane="best" departSpeed="max"/>
     <!-- Calle 76 (vuelta, 2457 m) -->
-    <flow id="corr_15" type="mezcla" begin="0" end="4000" vehsPerHour="250" from="561628385#1" to="106793688#5" departLane="best" departSpeed="max"/>
+    <flow id="corr_15" type="mezcla" begin="0" end="400000" period="exp(0.06944)" from="561628385#1" to="106793688#5" departLane="best" departSpeed="max"/>
 </routes>

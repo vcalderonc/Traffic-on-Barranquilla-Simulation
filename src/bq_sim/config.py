@@ -22,7 +22,7 @@ RED_SUMO = DIR_SUMO / "barranquilla.net.xml.gz"
 TIPOS_VEH = DIR_SUMO / "vtypes.add.xml"
 RUTAS_FONDO = DIR_SUMO / "trafico_fondo.rou.xml.gz"
 RUTAS_CORREDORES = DIR_SUMO / "corredores.rou.xml"
-PEATONES = DIR_SUMO / "peatones.rou.xml.gz"
+PEATONES_OD = DIR_SUMO / "peatones_od.json"   # pares origen-destino a pie (los lanza MundoSUMO)
 CONFIG_SUMO = DIR_SUMO / "barranquilla.sumocfg"
 
 # Recuadro geográfico (sur, oeste, norte, este): Gran Malecón del Río (de la Ventana de

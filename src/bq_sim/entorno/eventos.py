@@ -10,6 +10,13 @@ Cada imprevisto se genera como un proceso de Poisson en el espacio recorrido
 en SUMO como "vehículos fantasma" detenidos (tipos ``obs_*``) para que todo el
 tráfico reaccione a ellos y SUMO detecte los choques; el visor los dibuja con su
 forma real.
+
+Vendedores de semáforo: cuando el vehículo autónomo se detiene (o se está deteniendo)
+ante un rojo, un vendedor ambulante puede meterse entre los carros a ofrecer agua,
+minutos o frutas, y se queda en el carril hasta que cambia a verde. La probabilidad
+depende del estrato de la zona (``ciudad.estrato``): más en el centro y los corredores
+populares, menos en Alto Prado o Villa Country. Es el caso típico de "arrancar en
+verde sin mirar".
 """
 from __future__ import annotations
 
@@ -19,8 +26,12 @@ from dataclasses import dataclass, field
 from .. import config as C
 from .mundo import MundoSUMO, punto_en
 
-TIPO_SUMO = {"peaton": "obs_peaton", "perro": "obs_perro", "iguana": "obs_iguana", "conos": "obs_obra"}
-CLASE = {"peaton": "peaton", "perro": "animal", "iguana": "animal", "conos": "obra"}
+TIPO_SUMO = {"peaton": "obs_peaton", "perro": "obs_perro", "iguana": "obs_iguana", "conos": "obs_obra",
+             "vendedor": "obs_vendedor"}
+CLASE = {"peaton": "peaton", "perro": "animal", "iguana": "animal", "conos": "obra", "vendedor": "peaton"}
+
+# Probabilidad de que aparezca un vendedor en un semáforo en rojo, según el estrato.
+PROB_VENDEDOR = {0: 0.15, 1: 0.55, 2: 0.55, 3: 0.45, 4: 0.30, 5: 0.18, 6: 0.12}
 
 
 @dataclass
@@ -37,6 +48,8 @@ class ObjetoEvento:
     t_entrada: float = 0.0
     t_pausa_hasta: float = 0.0
     regresa: bool = False
+    espera_en: int | None = None  # vendedor: índice de ``carriles`` donde espera el verde
+    t_creado: float = 0.0
     vivo: bool = True
     en_sumo: bool = False
     historial: list = field(default_factory=list)
@@ -58,6 +71,8 @@ class GestorEventos:
         self.frenadas: list[dict] = []
         self.registro: list[dict] = []  # bitácora de eventos del episodio
         self._n = 0
+        self._ego: str | None = None
+        self._ultimo_rojo: tuple = ("", -1e9)
 
     # ------------------------------------------------------------ ciclo
     def reiniciar(self) -> None:
@@ -82,6 +97,8 @@ class GestorEventos:
                     self._crear(ego, "conos")
                 else:
                     self._crear(ego, "peaton")
+        self._ego = ego
+        self._vendedor(ego, v_ego)
         self._actualizar()
 
     # ----------------------------------------------------------- creación
@@ -156,6 +173,63 @@ class GestorEventos:
         self.registro.append({"t": round(self.m.t, 2), "evento": subtipo, "id": oid,
                               "calle": self.m.traci.edge.getStreetName(arista)})
 
+    def _estado_semaforo(self, ego: str | None):
+        try:
+            prox = self.m.traci.vehicle.getNextTLS(ego) if ego else ()
+        except Exception:
+            return None
+        return prox[0] if prox else None
+
+    def _vendedor(self, ego: str, v_ego: float) -> None:
+        """Vendedor ambulante que se mete entre los carros detenidos en un rojo."""
+        if v_ego > 6.0:
+            return
+        sem = self._estado_semaforo(ego)
+        if sem is None:
+            return
+        tls, _idx, dist, estado = sem
+        if estado.lower() not in ("r", "y", "u") or not 10.0 < dist < 45.0:
+            return
+        if tls == self._ultimo_rojo[0] and self.m.t - self._ultimo_rojo[1] < 90.0:
+            return  # una sola oportunidad por semáforo
+        self._ultimo_rojo = (tls, self.m.t)
+        tr = self.m.traci
+        from ..ciudad import estrato
+
+        x, y = tr.vehicle.getPosition(ego)
+        lon, lat = self.m.lonlat(x, y)
+        prob = PROB_VENDEDOR.get(estrato(lon, lat), 0.3) * self.mult * self.mult_clase.get("vendedor", 1.0)
+        if self.rng.random() >= min(0.9, prob):
+            return
+        arista = tr.vehicle.getRoadID(ego)
+        if arista.startswith(":"):
+            return
+        autos, anden = self._carriles(arista)
+        k_ego = tr.vehicle.getLaneIndex(ego)
+        if k_ego not in autos:
+            return
+        pos = tr.vehicle.getLanePosition(ego) + min(dist - 3.0, self.rng.uniform(6.0, 12.0))
+        if pos > self.m.largo_carril(f"{arista}_{k_ego}") - 1.0:
+            return
+        # entra desde el andén (o desde el borde derecho), llega al carril del ego,
+        # ofrece hasta que cambie a verde y se devuelve
+        ida = anden[:1] + [k for k in autos if k <= k_ego]
+        seq = ida + ida[-2::-1]
+        self._n += 1
+        vel = self.rng.uniform(0.8, 1.3)
+        ancho = self.m.ancho_carril(f"{arista}_{k_ego}")
+        ob = ObjetoEvento(f"obs_vendedor_{self._n}", "vendedor", arista, pos, seq, t_carril=ancho / vel,
+                          espera_inicial=self.rng.uniform(0.2, 1.0) if seq[0] in anden else 0.0,
+                          imprudente=False, espera_en=len(ida) - 1, t_creado=self.m.t)
+        if ob.carriles[0] in autos and not self._libre(ob, ob.carriles[0]):
+            return
+        if not self._insertar(ob, ob.carriles[0]):
+            return
+        ob.t_entrada = self.m.t
+        self.objetos[ob.id] = ob
+        self.registro.append({"t": round(self.m.t, 2), "evento": "vendedor", "id": ob.id,
+                              "calle": tr.edge.getStreetName(arista), "estrato": estrato(lon, lat)})
+
     def _insertar(self, ob: ObjetoEvento, k: int) -> bool:
         tr = self.m.traci
         carril = f"{ob.arista}_{k}"
@@ -214,6 +288,17 @@ class GestorEventos:
                 continue
             if ob.subtipo == "conos":
                 continue
+            if ob.subtipo == "vendedor":
+                if t - ob.t_creado > 75.0:  # nunca se queda para siempre
+                    self._retirar(ob)
+                    continue
+                if ob.espera_en is not None and ob.k == ob.espera_en and t - ob.t_entrada >= ob.t_carril:
+                    sem = self._estado_semaforo(self._ego)
+                    if sem is not None and sem[3].lower() in ("r", "y", "u"):
+                        continue  # sigue ofreciendo mientras esté en rojo
+                    ob.espera_en = None  # cambió a verde: termina la venta y se devuelve
+                    ob.t_pausa_hasta = t + self.rng.uniform(0.6, 2.2)
+                    continue
             if t < ob.t_pausa_hasta:
                 continue
             espera = ob.espera_inicial if ob.k == 0 else 0.0

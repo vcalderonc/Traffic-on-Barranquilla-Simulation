@@ -1,0 +1,311 @@
+{
+ "nota": "Estrato socioeconómico APROXIMADO por barrio (0 = zona industrial). Ubicación de barrios © colaboradores de OpenStreetMap (ODbL); la asignación de estratos es una aproximación del proyecto, no el plano oficial de estratificación de la Alcaldía de Barranquilla. Se usa para el estilo de edificios, la mezcla visual de vehículos, la vegetación y los vendedores ambulantes.",
+ "barrios": [
+  {
+   "nombre": "Siape",
+   "estrato": 2,
+   "lon": -74.802192,
+   "lat": 11.026143
+  },
+  {
+   "nombre": "Alameda del Rio",
+   "estrato": 3,
+   "lon": -74.843939,
+   "lat": 10.994902
+  },
+  {
+   "nombre": "Los Nogales",
+   "estrato": 5,
+   "lon": -74.827633,
+   "lat": 10.993673
+  },
+  {
+   "nombre": "Palmas del Rio",
+   "estrato": 5,
+   "lon": -74.826782,
+   "lat": 11.018586
+  },
+  {
+   "nombre": "Riomar",
+   "estrato": 6,
+   "lon": -74.822077,
+   "lat": 11.018927
+  },
+  {
+   "nombre": "Ciudad Mallorquín",
+   "estrato": 2,
+   "lon": -74.843704,
+   "lat": 11.023482
+  },
+  {
+   "nombre": "Barrio Abajo",
+   "estrato": 3,
+   "lon": -74.78438,
+   "lat": 10.990933
+  },
+  {
+   "nombre": "Montecristo",
+   "estrato": 3,
+   "lon": -74.786719,
+   "lat": 10.99504
+  },
+  {
+   "nombre": "Modelo",
+   "estrato": 3,
+   "lon": -74.78762,
+   "lat": 10.998621
+  },
+  {
+   "nombre": "Barrio Colombia",
+   "estrato": 4,
+   "lon": -74.804679,
+   "lat": 10.99346
+  },
+  {
+   "nombre": "Santa Ana",
+   "estrato": 4,
+   "lon": -74.791268,
+   "lat": 11.001886
+  },
+  {
+   "nombre": "Bellavista",
+   "estrato": 4,
+   "lon": -74.795023,
+   "lat": 11.001444
+  },
+  {
+   "nombre": "San Francisco",
+   "estrato": 4,
+   "lon": -74.792448,
+   "lat": 11.004814
+  },
+  {
+   "nombre": "La Concepción",
+   "estrato": 4,
+   "lon": -74.797212,
+   "lat": 11.008142
+  },
+  {
+   "nombre": "El Prado",
+   "estrato": 5,
+   "lon": -74.796869,
+   "lat": 10.997799
+  },
+  {
+   "nombre": "Villa Country",
+   "estrato": 5,
+   "lon": -74.805173,
+   "lat": 11.005888
+  },
+  {
+   "nombre": "Alto Prado",
+   "estrato": 6,
+   "lon": -74.812183,
+   "lat": 11.004359
+  },
+  {
+   "nombre": "El Golf",
+   "estrato": 6,
+   "lon": -74.80848,
+   "lat": 11.009646
+  },
+  {
+   "nombre": "Paraíso",
+   "estrato": 5,
+   "lon": -74.805542,
+   "lat": 11.015935
+  },
+  {
+   "nombre": "El Castillo",
+   "estrato": 3,
+   "lon": -74.803132,
+   "lat": 11.020006
+  },
+  {
+   "nombre": "San Salvador",
+   "estrato": 2,
+   "lon": -74.804271,
+   "lat": 11.024241
+  },
+  {
+   "nombre": "Las Tres Ave Marías",
+   "estrato": 3,
+   "lon": -74.807148,
+   "lat": 11.021087
+  },
+  {
+   "nombre": "San Marino",
+   "estrato": 4,
+   "lon": -74.808027,
+   "lat": 11.024921
+  },
+  {
+   "nombre": "La Floresta",
+   "estrato": 4,
+   "lon": -74.809385,
+   "lat": 11.022808
+  },
+  {
+   "nombre": "El Limoncito",
+   "estrato": 3,
+   "lon": -74.810864,
+   "lat": 11.0193
+  },
+  {
+   "nombre": "Villa Carolina",
+   "estrato": 5,
+   "lon": -74.815918,
+   "lat": 11.022598
+  },
+  {
+   "nombre": "Solaire Norte",
+   "estrato": 6,
+   "lon": -74.810088,
+   "lat": 11.015172
+  },
+  {
+   "nombre": "Villa del Este",
+   "estrato": 5,
+   "lon": -74.811305,
+   "lat": 11.013477
+  },
+  {
+   "nombre": "Barrio Riomar",
+   "estrato": 6,
+   "lon": -74.815,
+   "lat": 11.011546
+  },
+  {
+   "nombre": "Barrio Andalucía",
+   "estrato": 5,
+   "lon": -74.814066,
+   "lat": 11.015631
+  },
+  {
+   "nombre": "Altos de Riomar",
+   "estrato": 6,
+   "lon": -74.819484,
+   "lat": 11.015137
+  },
+  {
+   "nombre": "Santa Mónica",
+   "estrato": 5,
+   "lon": -74.822019,
+   "lat": 11.010401
+  },
+  {
+   "nombre": "San Vicente",
+   "estrato": 5,
+   "lon": -74.819183,
+   "lat": 11.006057
+  },
+  {
+   "nombre": "Altamira",
+   "estrato": 5,
+   "lon": -74.823162,
+   "lat": 11.005835
+  },
+  {
+   "nombre": "El Poblado",
+   "estrato": 6,
+   "lon": -74.826541,
+   "lat": 11.007379
+  },
+  {
+   "nombre": "Altos del Limón",
+   "estrato": 5,
+   "lon": -74.82506,
+   "lat": 11.01393
+  },
+  {
+   "nombre": "Barrio Buenavista",
+   "estrato": 6,
+   "lon": -74.828702,
+   "lat": 11.014641
+  },
+  {
+   "nombre": "Paseo de la Castellana",
+   "estrato": 6,
+   "lon": -74.834458,
+   "lat": 11.01601
+  },
+  {
+   "nombre": "Villa Santos",
+   "estrato": 6,
+   "lon": -74.834004,
+   "lat": 11.01086
+  },
+  {
+   "nombre": "Miramar",
+   "estrato": 4,
+   "lon": -74.835398,
+   "lat": 11.004519
+  },
+  {
+   "nombre": "El Tabor",
+   "estrato": 4,
+   "lon": -74.830409,
+   "lat": 11.001871
+  },
+  {
+   "nombre": "La Cumbre",
+   "estrato": 4,
+   "lon": -74.828605,
+   "lat": 10.998859
+  },
+  {
+   "nombre": "La Campiña",
+   "estrato": 5,
+   "lon": -74.824186,
+   "lat": 11.001519
+  },
+  {
+   "nombre": "Granadillo",
+   "estrato": 5,
+   "lon": -74.819503,
+   "lat": 11.000272
+  },
+  {
+   "nombre": "El Porvenir",
+   "estrato": 4,
+   "lon": -74.812545,
+   "lat": 10.997559
+  },
+  {
+   "nombre": "Barrio América",
+   "estrato": 4,
+   "lon": -74.807306,
+   "lat": 10.997596
+  },
+  {
+   "nombre": "Ciudad Jardín",
+   "estrato": 5,
+   "lon": -74.819383,
+   "lat": 10.991687
+  },
+  {
+   "nombre": "Nuevo Horizonte",
+   "estrato": 4,
+   "lon": -74.821636,
+   "lat": 10.995752
+  },
+  {
+   "nombre": "Los Alpes",
+   "estrato": 5,
+   "lon": -74.824893,
+   "lat": 10.997914
+  },
+  {
+   "nombre": "Zona Industrial - Loma Nº 3",
+   "estrato": 0,
+   "lon": -74.778654,
+   "lat": 11.001182
+  },
+  {
+   "nombre": "La Loma",
+   "estrato": 2,
+   "lon": -74.773836,
+   "lat": 10.993078
+  }
+ ]
+}

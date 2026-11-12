@@ -141,7 +141,18 @@ class AgenteObstaculos:
 
 # -------------------------------------------------------------- Navegación
 class AgenteNavegacion:
-    """Ruta sobre la red real y cambios de carril tácticos (esquivar obras o vehículos detenidos)."""
+    """Ruta sobre la red real y cambios de carril tácticos.
+
+    1. Esquivar: obras o vehículos detenidos que bloquean el carril.
+    2. Adelantar: si el vehículo de adelante va lento (bus, camión, moto despacio) se
+       pasa por la izquierda, como manda el Código Nacional de Tránsito (Ley 769 de
+       2002, art. 73: se adelanta por la izquierda; art. 60: se transita por la
+       derecha). No se adelanta cerca de un cruce, semáforo o PARE, ni a quien está
+       detenido en una fila (eso no es "lento", es un trancón o un rojo).
+    3. Volver a la derecha cuando ya pasó y el carril derecho está libre.
+    Seguridad da (o niega) el visto bueno a cada cambio con los sensores laterales y
+    el radar trasero.
+    """
 
     nombre = "navegacion"
 
@@ -149,6 +160,10 @@ class AgenteNavegacion:
         self.m = mundo
         self.ego = ego
         self.cambio_pedido_t = -99.0
+        self.lento_desde: float | None = None
+        self.objetivo_adelantar: int | None = None
+        self.adelantando_desde: float | None = None
+        self.adelantamientos = 0
 
     def carriles_validos(self) -> list[int]:
         """Carriles del tramo actual desde los que se puede seguir la ruta."""
@@ -163,6 +178,18 @@ class AgenteNavegacion:
         return validos
 
     def proponer(self, mm: ModeloMundo, amenazas: list[Objeto]) -> Propuesta:
+        # ¿se completó el cambio al carril de adelantamiento?
+        if self.objetivo_adelantar is not None and mm.carril_idx == self.objetivo_adelantar:
+            self.adelantamientos += 1
+            self.adelantando_desde = mm.t
+            self.objetivo_adelantar = None
+        p = self._esquivar(mm, amenazas)
+        if p.carril is not None or p.motivo or mm.n_carriles_auto < 2:
+            self.lento_desde = None
+            return p
+        return self._adelantar(mm, amenazas) or p
+
+    def _esquivar(self, mm: ModeloMundo, amenazas: list[Objeto]) -> Propuesta:
         bloqueo = next((o for o in amenazas if o.s < 70 and (o.clase == "obra" or
                         (o.clase == "vehiculo" and mm.v - o.v_rel < 0.3 and o.s < 35))), None)
         if bloqueo is None or mm.n_carriles_auto < 2:
@@ -174,7 +201,62 @@ class AgenteNavegacion:
         paso = destino - mm.carril_idx
         destino = mm.carril_idx + (1 if paso > 0 else -1)
         return Propuesta(self.nombre, carril=destino,
-                         motivo=f"cambiar al carril {destino} por {bloqueo.subtipo} a {bloqueo.s:.0f} m")
+                         motivo=f"cambiar al carril {destino} por {bloqueo.subtipo} a {bloqueo.s:.0f} m",
+                         datos={"tipo": "esquivar"})
+
+    @staticmethod
+    def _cruce_cerca(mm: ModeloMundo, dist: float) -> bool:
+        if mm.senal is not None and mm.senal.dist < dist:
+            return True
+        return any(s < dist and (conflicto or estado in "rRyYsSwm=")
+                   for (s, estado, conflicto, _via) in mm.camino.enlaces)
+
+    @staticmethod
+    def _carril_libre(mm: ModeloMundo, lado: int, adelante: float, v_min: float = 0.0) -> bool:
+        """¿El carril vecino (lado=-1 izquierda, +1 derecha) está libre hasta ``adelante`` m?
+
+        Se ignoran los vehículos de ese carril que van al menos a ``v_min`` m/s.
+        """
+        ancho = 3.2
+        for o in mm.detectados:
+            if o.clase != "vehiculo" or o.en_trayectoria:
+                continue
+            if 0.6 * ancho < lado * o.lateral < 1.6 * ancho and -3.0 < o.s < adelante:
+                if max(0.0, mm.v - o.v_rel) < v_min:
+                    return False
+        return True
+
+    def _adelantar(self, mm: ModeloMundo, amenazas: list[Objeto]) -> Propuesta | None:
+        validos = self.carriles_validos()
+        izquierda, derecha = mm.carril_idx + 1, mm.carril_idx - 1
+        # 3) ya adelantó: volver a la derecha cuando haya espacio
+        if self.adelantando_desde is not None:
+            if derecha not in validos:
+                self.adelantando_desde = None
+            elif mm.t - self.adelantando_desde > 3.0 and self._carril_libre(mm, 1, 25.0) \
+                    and not self._cruce_cerca(mm, 25.0):
+                return Propuesta(self.nombre, carril=derecha, motivo="volver al carril derecho tras adelantar",
+                                 datos={"tipo": "volver"})
+        # 2) ¿hay un vehículo lento adelante?
+        lider = next((o for o in amenazas if o.clase == "vehiculo"), None)
+        if lider is None or lider.s > 55.0:
+            self.lento_desde = None
+            return None
+        v_lider = max(0.0, mm.v - lider.v_rel)
+        lento = 1.5 < v_lider < 0.75 * mm.v_lim and (mm.v_lim - v_lider) > 2.5
+        if not lento or self._cruce_cerca(mm, 45.0) or izquierda not in validos:
+            self.lento_desde = None
+            return None
+        if self.lento_desde is None:
+            self.lento_desde = mm.t
+        if mm.t - self.lento_desde < 2.0:  # que no sea un frenazo pasajero
+            return None
+        if not self._carril_libre(mm, -1, lider.s + 25.0, v_min=v_lider + 2.0):
+            return Propuesta(self.nombre, motivo=f"{lider.subtipo} lento, pero el carril izquierdo va ocupado")
+        self.objetivo_adelantar = izquierda
+        return Propuesta(self.nombre, carril=izquierda,
+                         motivo=f"adelantar a {lider.subtipo} lento ({v_lider * 3.6:.0f} km/h) por la izquierda",
+                         datos={"tipo": "adelantar"})
 
 
 # --------------------------------------------------------------- Seguridad
@@ -197,6 +279,12 @@ class AgenteSeguridad:
                 continue
             if 0.6 * ancho < lado * o.lateral < 1.6 * ancho and -12.0 < o.s < 8.0 + max(0.0, o.v_rel) * 1.5:
                 return False
+        # radar trasero: alguien que viene por ese carril y llegaría en menos de 3 s
+        for o in mm.extras.get("traseros", ()):
+            if 0.6 * ancho < lado * o.lateral < 1.6 * ancho:
+                distancia = -o.s
+                if distancia < 8.0 or (o.v_rel < -0.5 and distancia / -o.v_rel < 3.0):
+                    return False
         return True
 
     def proponer(self, mm: ModeloMundo, amenazas: list[Objeto], carril_pedido: int | None) -> Propuesta:

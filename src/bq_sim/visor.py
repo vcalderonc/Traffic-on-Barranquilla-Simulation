@@ -9,8 +9,13 @@
 
 Las alturas de los edificios no existen en OSM para esta zona (solo 221 de 11 869
 tienen pisos): se usan los pisos de OSM cuando existen y, si no, una altura
-sintética determinista según el área de la huella. Es un supuesto visual que no
-afecta la simulación.
+sintética determinista según el área de la huella y el estrato del barrio
+(``ciudad.estrato``): torres de 8 a 26 pisos en Alto Prado, Riomar, Villa Country o
+Buenavista; casas de uno o dos pisos y colores vivos en los barrios populares;
+bodegas en la zona industrial. También según el estrato se siembran árboles de calle
+(más y con más robles morados y guayacanes en el norte) y se ubican puestos de
+vendedores ambulantes (más en los corredores populares y en el Malecón). Es un
+supuesto visual que no afecta la simulación.
 """
 from __future__ import annotations
 
@@ -153,7 +158,12 @@ def exportar_ciudad() -> dict:
             item = [R(ln.getWidth()), _plano(loc(ln.getShape()))]
             (ciudad["andenes"] if peatonal else carriles).append(item)
         if carriles:
-            ciudad["carriles"].append({"interno": fn == "internal", "l": carriles})
+            item = {"interno": fn == "internal", "l": carriles}
+            if fn != "internal":  # ¿doble sentido? (para pintar la línea central amarilla)
+                ida = (e.getFromNode().getID(), e.getToNode().getID())
+                if any(o.getToNode().getID() == ida[0] for o in e.getToNode().getOutgoing()):
+                    item["o"] = 1
+            ciudad["carriles"].append(item)
     for n in red.getNodes():
         forma = n.getShape()
         if len(forma) >= 3:
@@ -197,6 +207,11 @@ def exportar_ciudad() -> dict:
                 pts.append((x, y))
         return pts
 
+    from .ciudad import _barrios, barrio
+
+    def estrato_xy(x, y):
+        return barrio(*red.convertXY2LonLat(x, y))[1]
+
     hitos = json.loads((C.RAIZ / "data" / "hitos.json").read_text(encoding="utf-8"))["hitos"]
     ids_hitos = {str(h["osm"]["id"]) for h in hitos if h["osm"]["tipo"] == "way"} | {"685753639", "744671556"}
     for wid, (refs, tags) in vias.items():
@@ -207,24 +222,22 @@ def exportar_ciudad() -> dict:
             if len(p) < 3 or not all(caja[0] < x < caja[2] and caja[1] < y < caja[3] for x, y in p):
                 continue
             area = _area(p)
+            cx, cy = sum(x for x, _ in p) / len(p), sum(y for _, y in p) / len(p)
+            est = estrato_xy(cx, cy)
+            tipo = tags.get("building", "yes")
+            h = int(hashlib.md5(wid.encode()).hexdigest()[:6], 16) / 0xFFFFFF
+            h2 = int(hashlib.md5((wid + "e").encode()).hexdigest()[:6], 16) / 0xFFFFFF
+            pisos, estilo = _pisos_y_estilo(area, est, tipo, h, h2)
             if "building:levels" in tags:
                 try:
                     pisos = float(tags["building:levels"].split(";")[0])
                 except ValueError:
-                    pisos = 2
-            else:
-                h = int(hashlib.md5(wid.encode()).hexdigest()[:6], 16) / 0xFFFFFF
-                if area < 120:
-                    pisos = 1 + round(h)
-                elif area < 400:
-                    pisos = 2 + round(2 * h)
-                elif area < 1500:
-                    pisos = 3 + round(7 * h ** 2)
-                else:
-                    pisos = 2 + round(14 * h ** 3)
-            altura = float(tags.get("height", "0").split()[0] or 0) if tags.get("height") else pisos * 3.2
-            tipo = tags.get("building", "yes")
-            ciudad["edificios"].append([round(altura, 1), tipo[:12], _plano(loc(p))])
+                    pass
+            alto_piso = 4.5 if estilo == 4 else 3.1
+            altura = float(tags.get("height", "0").split()[0] or 0) if tags.get("height") else pisos * alto_piso
+            if estilo in (0, 1) and altura < 15:
+                estilo = 5 if est >= 5 else 2
+            ciudad["edificios"].append([round(min(altura, 140.0), 1), tipo[:12], _plano(loc(p)), est, estilo])
         elif tags.get("leisure") == "park" or tags.get("landuse") == "grass":
             p = xy(refs)
             p = _recortar(p, *caja)
@@ -253,11 +266,201 @@ def exportar_ciudad() -> dict:
                     ciudad["etiquetas"].append(["agua", tags["name"], R(cx - ox), R(cy - oy)])
     ciudad["hitos"] = _exportar_hitos(red, hitos, ox, oy)
     ciudad["faroles"] = _faroles(red, ox, oy)
+    ciudad["barrios"] = []
+    for lon, lat, est, nombre in _barrios():
+        x, y = red.convertLonLat2XY(lon, lat)
+        ciudad["barrios"].append([R(x - ox), R(y - oy), est, nombre])
+    ciudad["arboles"] = _arboles(red, ciudad, ox, oy, estrato_xy)
+    ciudad["puestos"] = _puestos(red, ciudad, ox, oy, estrato_xy)
     DIR_DATOS.mkdir(parents=True, exist_ok=True)
     (DIR_DATOS / "ciudad.json").write_text(json.dumps(ciudad, separators=(",", ":"), ensure_ascii=False),
                                            encoding="utf-8")
     print({k: len(v) for k, v in ciudad.items() if isinstance(v, list)})
     return ciudad
+
+
+def _pisos_y_estilo(area: float, est: int, tipo: str, h: float, h2: float) -> tuple[float, int]:
+    """Pisos sintéticos y estilo visual según huella, estrato y uso de OSM.
+
+    Estilos: 0 torre de vidrio, 1 torre residencial de concreto con balcones,
+    2 edificio medio en tonos pastel, 3 casa popular de colores vivos, 4 bodega,
+    5 casa o edificio bajo elegante (estratos 5-6).
+    """
+    if tipo in ("industrial", "warehouse", "hangar", "manufacture") or est == 0:
+        return (1 + round(h), 4) if area > 300 else (1 + round(h), 3 if est <= 3 else 2)
+    if tipo in ("house", "detached", "terrace", "hut", "shed", "garage"):
+        return (1 + round(h * (1.6 if est >= 4 else 1.0)), 5 if est >= 5 else 3 if est <= 3 else 2)
+    if est >= 5:
+        if area < 250:
+            return 2 + round(h), 5
+        if 350 <= area <= 2500 and h2 < 0.36:
+            return 8 + round(18 * h ** 1.3), 0 if h2 < 0.13 else 1
+        return (3 + round(5 * h), 5) if area <= 2500 else (3 + round(5 * h), 0 if h2 < 0.4 else 2)
+    if est == 4:
+        if 300 <= area <= 2000 and h2 < 0.16:
+            return 6 + round(8 * h), 1
+        return (2 + round(2 * h), 2) if area >= 120 else (1 + round(h), 2)
+    if est == 3:
+        if area > 400 and h2 < 0.08:
+            return 5 + round(5 * h), 1
+        return (2 + round(3 * h), 2) if area > 400 else (1 + round(2 * h ** 2), 3)
+    return (2 + round(h), 2) if area > 400 else (1 + round(h ** 2), 3)
+
+
+def _rejilla_edificios(ciudad, celda: float = 40.0) -> tuple[dict, float]:
+    rejilla: dict = {}
+    for i, b in enumerate(ciudad["edificios"]):
+        pl = b[2]
+        xs, ys = pl[0::2], pl[1::2]
+        for gx in range(int(min(xs) // celda), int(max(xs) // celda) + 1):
+            for gy in range(int(min(ys) // celda), int(max(ys) // celda) + 1):
+                rejilla.setdefault((gx, gy), []).append(i)
+    return rejilla, celda
+
+
+def _libre_de_edificios(ciudad, rejilla, celda, x, y) -> bool:
+    for i in rejilla.get((int(x // celda), int(y // celda)), ()):
+        pl = ciudad["edificios"][i][2]
+        if _dentro(list(zip(pl[0::2], pl[1::2])), x, y):
+            return False
+    return True
+
+
+# separación (m) entre árboles de calle según el estrato: el norte es mucho más arborizado
+PASO_ARBOLES = {0: 90, 1: 55, 2: 45, 3: 30, 4: 22, 5: 15, 6: 12}
+
+
+def _arboles(red, ciudad, ox, oy, estrato_xy) -> list:
+    """Árboles de calle [x, y, altura, especie]: 0 mango/campano, 1 almendro, 2 roble morado,
+    3 guayacán amarillo, 4 palma, 5 matarratón."""
+    import random
+
+    rejilla, celda = _rejilla_edificios(ciudad)
+    out = []
+    for e in red.getEdges():
+        if e.getFunction() == "internal" or not e.allows("passenger") or e.getName() in VIAS_ILUMINADAS:
+            continue
+        forma = e.getShape()
+        if len(forma) < 2:
+            continue
+        rng = random.Random(e.getID())
+        mx, my = forma[len(forma) // 2]
+        est = estrato_xy(mx, my)
+        paso = PASO_ARBOLES.get(est, 35)
+        ancho = sum(ln.getWidth() for ln in e.getLanes()) / 2 + 1.9
+        acumulado, siguiente = 0.0, rng.uniform(0, paso)
+        for (x1, y1), (x2, y2) in zip(forma[:-1], forma[1:]):
+            seg = math.hypot(x2 - x1, y2 - y1)
+            if seg < 1e-6:
+                continue
+            nx, ny = (y2 - y1) / seg, -(x2 - x1) / seg
+            while siguiente <= acumulado + seg:
+                f = (siguiente - acumulado) / seg
+                x, y = x1 + f * (x2 - x1) + nx * ancho, y1 + f * (y2 - y1) + ny * ancho
+                siguiente += paso * rng.uniform(0.75, 1.3)
+                if rng.random() < 0.2 or not _libre_de_edificios(ciudad, rejilla, celda, x - ox, y - oy):
+                    continue
+                r = rng.random()
+                flor = 0.28 if est >= 5 else 0.12 if est >= 3 else 0.05
+                if r < flor * 0.6:
+                    especie = 2
+                elif r < flor:
+                    especie = 3
+                elif r < flor + 0.08:
+                    especie = 4
+                elif r < flor + 0.2:
+                    especie = 1
+                elif r < flor + 0.3:
+                    especie = 5
+                else:
+                    especie = 0
+                alto = rng.uniform(5.5, 9.0) if est <= 2 else rng.uniform(7.0, 14.0)
+                out.append([R(x - ox), R(y - oy), round(alto, 1), especie])
+            acumulado += seg
+    return out
+
+
+# puestos de vendedores: probabilidad por semáforo según el estrato
+PROB_PUESTO_SEMAFORO = {0: 0.25, 1: 0.75, 2: 0.75, 3: 0.6, 4: 0.4, 5: 0.2, 6: 0.12}
+CORREDORES_COMERCIALES = ("Avenida Calle 72", "Avenida Carrera 46", "Calle 84", "Carrera 53", "Calle 76",
+                          "Calle 79", "Carrera 51B", "Calle 98", "Carrera 54", "Calle 70", "Carrera 43",
+                          "Carrera 44", "Calle 74")
+
+
+def _puestos(red, ciudad, ox, oy, estrato_xy) -> list:
+    """Puestos de vendedores ambulantes [x, y, rumbo, tipo, estrato].
+
+    Tipos: 0 carrito con sombrilla (frutas, raspao), 1 toldo con mesa, 2 carrito de
+    tinto y termos, 3 kiosco de comida (Malecón). Van en las esquinas con semáforo, a lo
+    largo de los corredores comerciales y en las plazoletas del Malecón.
+    """
+    import random
+
+    rng = random.Random(98)
+    rejilla, celda = _rejilla_edificios(ciudad)
+    out = []
+
+    def poner(x, y, rumbo, tipo, est):
+        if _libre_de_edificios(ciudad, rejilla, celda, x - ox, y - oy):
+            out.append([R(x - ox), R(y - oy), round(rumbo, 2), tipo, est])
+
+    # esquinas con semáforo
+    for tls in red.getTrafficLights():
+        vistos = set()
+        for (entrada, _salida, _idx) in tls.getConnections():
+            arista = entrada.getEdge()
+            if arista.getID() in vistos:
+                continue
+            vistos.add(arista.getID())
+            forma = entrada.getShape()
+            (x1, y1), (x2, y2) = forma[-2], forma[-1]
+            ang = math.atan2(y2 - y1, x2 - x1)
+            est = estrato_xy(x2, y2)
+            if rng.random() > PROB_PUESTO_SEMAFORO.get(est, 0.4) * 0.6:
+                continue
+            ancho = sum(ln.getWidth() for ln in arista.getLanes()) / 2 + 2.6
+            atras = rng.uniform(6, 14)
+            x = x2 - math.cos(ang) * atras + math.sin(ang) * ancho
+            y = y2 - math.sin(ang) * atras - math.cos(ang) * ancho
+            poner(x, y, ang + math.pi / 2, rng.choice((0, 0, 1, 2)) if est <= 4 else 2, est)
+    # corredores comerciales
+    for e in red.getEdges():
+        if e.getName() not in CORREDORES_COMERCIALES or not e.allows("passenger"):
+            continue
+        forma = e.getShape()
+        mx, my = forma[len(forma) // 2]
+        est = estrato_xy(mx, my)
+        if est >= 5 and rng.random() < 0.7:
+            continue
+        ancho = sum(ln.getWidth() for ln in e.getLanes()) / 2 + 2.8
+        acumulado, siguiente = 0.0, rng.uniform(20, 120)
+        for (x1, y1), (x2, y2) in zip(forma[:-1], forma[1:]):
+            seg = math.hypot(x2 - x1, y2 - y1)
+            if seg < 1e-6:
+                continue
+            nx, ny = (y2 - y1) / seg, -(x2 - x1) / seg
+            while siguiente <= acumulado + seg:
+                f = (siguiente - acumulado) / seg
+                x, y = x1 + f * (x2 - x1) + nx * ancho, y1 + f * (y2 - y1) + ny * ancho
+                poner(x, y, math.atan2(y2 - y1, x2 - x1) + math.pi / 2, rng.choice((0, 1, 1, 2)), est)
+                siguiente += rng.uniform(70, 160) * (1.8 if est >= 4 else 1.0)
+            acumulado += seg
+    # kioscos y carritos del Malecón (dentro del parque lineal)
+    for nombre, plano in ciudad["parques"]:
+        if "Malec" not in nombre:
+            continue
+        pts = [(plano[i] + ox, plano[i + 1] + oy) for i in range(0, len(plano), 2)]
+        n = min(60, int(_area(pts) / 3000))
+        xs, ys = [x for x, _ in pts], [y for _, y in pts]
+        puestos = 0
+        for _ in range(n * 30):
+            if puestos >= n:
+                break
+            x, y = rng.uniform(min(xs), max(xs)), rng.uniform(min(ys), max(ys))
+            if _dentro(pts, x, y):
+                poner(x, y, rng.uniform(0, 6.28), rng.choice((3, 3, 0, 2)), estrato_xy(x, y))
+                puestos += 1
+    return out
 
 
 VIAS_ILUMINADAS = ("Avenida del Río", "Vía 40", "Avenida Calle 72", "Calle 98", "Calle 99", "Carrera 53",
@@ -327,6 +530,16 @@ def _exportar_hitos(red, hitos: list, ox, oy) -> list:
             cx = sum(x for x, _ in pts) / len(pts)
             cy = sum(y for _, y in pts) / len(pts)
             item["x"], item["y"] = R(cx - ox), R(cy - oy)
+            item["rumbo"] = round(rumbo_via(cx, cy, ("Vía 40", "Avenida del Río", "Avenida Circunvalar")), 3)
+            if h["tipo"] == "puerta_oro":  # el portal dorado mira a la Vía 40
+                vx, vy = punto_via_cercano(cx, cy, ("Vía 40",))
+                lados = []
+                for i in range(len(pts)):
+                    (x1, y1), (x2, y2) = pts[i], pts[(i + 1) % len(pts)]
+                    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+                    lados.append((math.hypot(mx - vx, my - vy) - 0.2 * math.hypot(x2 - x1, y2 - y1), (x1, y1, x2, y2)))
+                x1, y1, x2, y2 = min(lados)[1]
+                item["fachada"] = [R(x1 - ox), R(y1 - oy), R(x2 - ox), R(y2 - oy)]
             if h["tipo"] == "mall":
                 # fachada más cercana a la vía principal: ahí va la pantalla gigante y el letrero
                 vx, vy = punto_via_cercano(cx, cy, ("Calle 98", "Carrera 53", "Calle 99", "Carrera 54"))
@@ -360,7 +573,11 @@ def _sembrar_palmeras(p, ciudad, ox, oy, semilla: str, malecon: bool) -> None:
 
 
 # ============================================================ recorrido
-TIPOS_VISOR = {"auto": 0, "taxi": 1, "moto": 2, "bus": 3, "camion": 4}
+# Código de clase para el visor: 0 compacto, 1 taxi, 2 moto, 3 bus, 4 camión, 5 sedán,
+# 6 camioneta SUV, 7 pick-up, 8 Cybertruck, 9 vehículo autónomo. El modelo exacto dentro
+# de la clase (p. ej. Model Y o Prado TXL entre las SUV) lo elige el visor según el estrato.
+TIPOS_VISOR = {"auto_compacto": 0, "taxi": 1, "moto": 2, "bus": 3, "camion": 4, "auto_sedan": 5,
+               "auto_suv": 6, "auto_pickup": 7, "auto_cybertruck": 8, "auto": 5}
 
 
 class Grabadora:
@@ -409,7 +626,7 @@ class Grabadora:
         personas = []
         for pid in tr.person.getIDList():
             x, y = tr.person.getPosition(pid)
-            if abs(x - ex) < 350 and abs(y - ey) < 350:
+            if abs(x - ex) < 300 and abs(y - ey) < 300:
                 personas.append([self._id(pid), R(x - self.ox), R(y - self.oy), round(tr.person.getAngle(pid), 1)])
         objetos = [[self._id(o["id"]), o["tipo"], R(o["x"] - self.ox), R(o["y"] - self.oy), o["rumbo"]]
                    for o in env.eventos.posiciones_render()]
@@ -432,6 +649,7 @@ class Grabadora:
                 "bruscas": met.frenadas_bruscas, "pare": met.pare_respetados, "pare_mal": met.pare_violados,
                 "rojos": met.rojos_violados, "dist": round(met.distancia_m), "carril": mm.carril_idx,
                 "clima": mm.clima.nombre, "alcance": mm.clima.alcance_m,
+                "adel": env.veh.navegacion.adelantamientos,
             },
         }
 
@@ -449,17 +667,24 @@ class Grabadora:
 
     def fin_episodio(self, env) -> None:
         self.episodios[-1]["fin"] = len(self.cuadros)
-        self.episodios[-1]["metricas"] = env.eval.met.resumen()
+        self.episodios[-1]["metricas"] = {**env.eval.met.resumen(),
+                                          "adelantamientos": env.veh.navegacion.adelantamientos}
         self.episodios[-1]["eventos"] = env.eval.met.eventos + env.eventos.registro
 
 
 # Recorridos grabados para el visor: (archivo, vía, hora inicial, lluvia, minutos de día por s, semilla)
+# El 7.º campo (opcional) pide un recorrido a la medida: partida, monumentos y duración.
 RECORRIDOS = (
     ("recorrido_1_malecon_atardecer", "Avenida del Río", 17.2, False, 0.6, 201),
     ("recorrido_2_malecon_dia", "Avenida del Río", 10.0, False, 0.0, 202),
     ("recorrido_3_calle84_lluvia", "Calle 84", 15.0, True, 0.0, 207),
     ("recorrido_4_malecon_noche", "Avenida del Río", 21.0, False, 0.0, 204),
     ("recorrido_5_buenavista_noche", "Calle 98", 19.6, False, 0.0, 205),
+    ("recorrido_7_via40_hora_pico", "Vía 40", 7.4, False, 0.0, 211),
+    ("recorrido_8_buenavista_ventana_al_mundo", None, 17.7, False, 0.35, 212,
+     {"partida": "buenavista", "pasar_por": ["ventana_mundo"], "duracion": 420.0}),
+    ("recorrido_9_malecon_aleta_tiburon_noche", None, 19.4, False, 0.0, 213,
+     {"partida": "malecon_72", "pasar_por": ["aleta_tiburon"], "duracion": 360.0}),
 )
 
 
@@ -501,15 +726,26 @@ def grabar_recorrido(duracion_s: float = 240.0, recorridos=RECORRIDOS, solo: lis
     ruta_indice = DIR_DATOS / "recorridos.json"
     previos = json.loads(ruta_indice.read_text(encoding="utf-8")) if ruta_indice.exists() else []
     indice = {r["archivo"]: r for r in previos if (DIR_DATOS / r["archivo"]).exists()}
-    for (nombre, via, hora, lluvia, ciclo, semilla) in recorridos:
+    for (nombre, via, hora, lluvia, ciclo, semilla, *resto) in recorridos:
         if solo and nombre not in solo:
             continue
+        extra = resto[0] if resto else {}
         grab = Grabadora(ciudad["origen"])
+        # misma demanda que el modo en vivo: tráfico según la hora (horas pico) y ciudad ya llena
         env = ConduccionBarranquillaEnv(semilla=semilla, guardrail=True, multiplicador_eventos=2.0,
-                                        t_max_s=duracion_s, grabadora=grab)
+                                        t_max_s=extra.get("duracion", duracion_s), grabadora=grab,
+                                        escala_demanda=0.9, demanda_por_hora=True, calentamiento_s=600.0)
+        env.max_quieto_s = 150.0
         try:
-            env.mundo._rutas[f"via:{via}/ego_auto"] = [_ruta_para_grabar(env.mundo, via)]
-            obs, _ = env.reset(options={"via": via, "hora": hora, "lluvia": lluvia, "ciclo_min_por_s": ciclo})
+            opciones = {"hora": hora, "lluvia": lluvia, "ciclo_min_por_s": ciclo,
+                        "t_max_s": extra.get("duracion", duracion_s)}
+            if extra.get("partida"):
+                opciones.update(partida=extra["partida"], pasar_por=extra.get("pasar_por", []),
+                                destino=extra.get("destino"))
+            else:
+                env.mundo._rutas[f"via:{via}/ego_auto"] = [_ruta_para_grabar(env.mundo, via)]
+                opciones["via"] = via
+            obs, _ = env.reset(options=opciones)
             fin = False
             while not fin:
                 a = maestro.actuar(obs, explorar=False) if maestro else None
@@ -517,17 +753,22 @@ def grabar_recorrido(duracion_s: float = 240.0, recorridos=RECORRIDOS, solo: lis
                 fin = term or trunc
         finally:
             env.close()
-        archivo = f"{nombre}.json"
+        # comprimido (el visor lo descomprime con DecompressionStream): ~5 veces más liviano
+        archivo = f"{nombre}.json.gz"
+        via = via or grab.episodios[0].get("ruta", "recorrido a la medida")
         datos = {"via": via, "hora": hora, "lluvia": lluvia, "ids": len(grab._ids),
                  "episodios": grab.episodios, "cuadros": grab.cuadros, "dt": C.PASO_SIM_S * grab.cada}
-        (DIR_DATOS / archivo).write_text(json.dumps(datos, separators=(",", ":"), ensure_ascii=False),
-                                         encoding="utf-8")
+        with gzip.open(DIR_DATOS / archivo, "wt", encoding="utf-8") as f:
+            f.write(json.dumps(datos, separators=(",", ":"), ensure_ascii=False))
+        (DIR_DATOS / f"{nombre}.json").unlink(missing_ok=True)
+        indice.pop(f"{nombre}.json", None)
         m = grab.episodios[0].get("metricas", {})
         indice[archivo] = {"archivo": archivo, "via": via, "hora": hora, "lluvia": lluvia,
                            "ruta": grab.episodios[0].get("ruta", ""),
                            "duracion_s": round(len(grab.cuadros) * datos["dt"], 1),
                            "choques": m.get("choques"), "casi_choques": m.get("casi_choques"),
-                           "eventos": len(grab.episodios[0].get("eventos", []))}
+                           "eventos": len(grab.episodios[0].get("eventos", [])),
+                           "adelantamientos": m.get("adelantamientos", 0)}
         print(archivo, len(grab.cuadros), "cuadros", m, flush=True)
     ruta_indice.write_text(json.dumps(sorted(indice.values(), key=lambda r: r["archivo"]), indent=1,
                                       ensure_ascii=False), encoding="utf-8")

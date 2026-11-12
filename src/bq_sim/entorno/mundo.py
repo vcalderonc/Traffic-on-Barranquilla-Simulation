@@ -6,6 +6,8 @@ episodio), lo que ahorra el costo de cargar la red y deja el tráfico ya "calien
 """
 from __future__ import annotations
 
+import bisect
+import json
 import math
 import random
 from dataclasses import dataclass
@@ -106,17 +108,21 @@ class MundoSUMO:
         args += extra or []
         self.traci.start(args)
         self.dt = self.traci.simulation.getDeltaT()
+        self.escala_base = escala_demanda
+        self.factor_hora = 1.0
         self._formas: dict[str, list] = {}
         self._largos: dict[str, float] = {}
         self._anchos: dict[str, float] = {}
         self._vmax: dict[str, float] = {}
         self._permite_auto: dict[str, bool] = {}
+        self.peatones = PeatonesDinamicos(self, semilla)
         self.avanzar(int(calentamiento_s / self.dt))
         self._rutas: dict[str, list[RutaEgo]] = {}
 
     # ------------------------------------------------------------------ tiempo
     def avanzar(self, pasos: int = 1) -> None:
         for _ in range(pasos):
+            self.peatones.paso()
             self.traci.simulationStep()
 
     @property
@@ -128,6 +134,24 @@ class MundoSUMO:
             self.traci.close()
         except Exception:
             pass
+
+    def ajustar_demanda(self, factor: float, recalentar: bool = True, hora: float | None = None) -> None:
+        """Horas pico: multiplica la demanda base por ``factor`` (``ciudad.factor_demanda``).
+
+        SUMO aplica la escala a los vehículos que entran desde ese momento; si el cambio
+        es grande se avanza un rato la simulación para que la red se llene (o se
+        desocupe) antes de que salga el vehículo autónomo. Con ``hora`` también se
+        ajusta la gente a pie (``ciudad.factor_peatones``).
+        """
+        anterior, self.factor_hora = self.factor_hora, factor
+        self.traci.simulation.setScale(self.escala_base * factor)
+        if hora is not None:
+            from ..ciudad import factor_peatones
+
+            self.peatones.factor = {g: factor_peatones(hora, g) for g in ("ciudad", "paseo")}
+        cambio = abs(factor - anterior)
+        if recalentar and cambio > 0.25:
+            self.avanzar(int(min(60.0, 60.0 * cambio) / self.dt))
 
     # ------------------------------------------------------------ geometría
     def forma_carril(self, carril: str) -> list:
@@ -260,6 +284,117 @@ class MundoSUMO:
         self._rutas[clave] = rutas
         return rutas
 
+    # ------------------------------------------------- recorridos a la medida
+    def punto_xy(self, lugar) -> tuple[float, float]:
+        """Lugar de ``ciudad.LUGARES`` (id) o punto (x, y) de la red -> coordenadas de SUMO."""
+        if isinstance(lugar, str):
+            from ..ciudad import LUGARES
+
+            if lugar not in LUGARES:
+                raise ValueError(f"Lugar desconocido: {lugar}")
+            _nombre, lon, lat = LUGARES[lugar]
+            return self.traci.simulation.convertGeo(lon, lat, fromGeo=True)
+        x, y = lugar
+        return float(x), float(y)
+
+    def _red(self):
+        """Red de SUMO leída con sumolib (geometría y glorietas), solo cuando se necesita."""
+        if getattr(self, "_red_sumolib", None) is None:
+            import warnings
+
+            import sumolib
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._red_sumolib = sumolib.net.readNet(str(C.RED_SUMO), withInternal=False)
+                self._glorietas = [tuple(r.getEdges()) for r in self._red_sumolib.getRoundabouts()]
+        return self._red_sumolib
+
+    def arista_cercana(self, x: float, y: float, tipo: str = "ego_auto", radio_glorieta: float = 75.0) -> str:
+        """Tramo más cercano a (x, y) por donde puede andar el vehículo.
+
+        Si hay una glorieta a menos de ``radio_glorieta`` m (los monumentos sobre
+        rotondas), se elige un tramo de la glorieta para que la ruta pase por ella.
+        """
+        import warnings
+
+        red = self._red()
+        clase = self.traci.vehicletype.getVehicleClass(tipo)
+
+        def dist(e):
+            forma = e.getShape()
+            return min(_dist_segmento(x, y, forma[i], forma[i + 1]) for i in range(len(forma) - 1))
+
+        mejor = None
+        for glorieta in self._glorietas:
+            for eid in glorieta:
+                e = red.getEdge(eid)
+                if e.allows(clase):
+                    d = dist(e)
+                    if d < radio_glorieta and (mejor is None or d < mejor[0]):
+                        mejor = (d, eid)
+        if mejor:
+            return mejor[1]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            vecinas = [(d, e.getID()) for e, d in red.getNeighboringEdges(x, y, 250.0) if e.allows(clase)]
+        if not vecinas:
+            raise ValueError("No hay una vía para carros cerca de ese punto")
+        return min(vecinas)[1]
+
+    def ruta_personalizada(self, partida, pasar_por=(), destino=None, tipo: str = "ego_auto",
+                           semilla: int = 0) -> RutaEgo:
+        """Ruta que sale de ``partida``, pasa por cada lugar de ``pasar_por`` (en orden) y
+        termina en ``destino``.
+
+        Los monumentos de la Vía 40 (Ventana al Mundo, Aleta del Tiburón) están sobre
+        rotondas: su punto cae en la glorieta, así que la ruta le da la vuelta. Sin
+        destino, el recorrido sigue 0.8 a 2 km más por una vía principal.
+        """
+        tr = self.traci
+        puntos = [self.punto_xy(partida)] + [self.punto_xy(p) for p in pasar_por]
+        if destino:
+            puntos.append(self.punto_xy(destino))
+        aristas_obj = [self.arista_cercana(x, y, tipo) for x, y in puntos]
+        if not destino:
+            aristas_obj.append(self._salida_principal(puntos[-1], aristas_obj[-1], tipo, semilla))
+        ruta: list[str] = []
+        for a, b in zip(aristas_obj[:-1], aristas_obj[1:]):
+            if a == b:
+                continue
+            r = tr.simulation.findRoute(a, b, tipo)
+            if not r.edges:
+                raise ValueError(f"No hay ruta en carro de {tr.edge.getStreetName(a) or a} a "
+                                 f"{tr.edge.getStreetName(b) or b}")
+            tramo = list(r.edges)
+            ruta += tramo[1:] if ruta and ruta[-1] == tramo[0] else tramo
+        if len(ruta) < 2:
+            raise ValueError("El recorrido es demasiado corto")
+        largo = sum(self.largo_carril(f"{e}_0") for e in ruta)
+        nombres = []
+        for e in ruta:
+            nom = tr.edge.getStreetName(e)
+            if nom and nom not in nombres:
+                nombres.append(nom)
+        return RutaEgo(tuple(ruta), largo, "recorrido a la medida", " → ".join(nombres[:6]))
+
+    def _salida_principal(self, punto, arista: str, tipo: str, semilla: int) -> str:
+        """Un tramo de una vía principal a 0.8-2 km del último punto para seguir el viaje."""
+        rng = random.Random(semilla + 31)
+        x0, y0 = punto
+        candidatas = []
+        for via in VIAS_SELECCIONABLES:
+            for e in self._aristas_calles((via,)):
+                x, y = self.forma_carril(f"{e}_0")[-1]
+                if 800.0 <= math.hypot(x - x0, y - y0) <= 2000.0:
+                    candidatas.append(e)
+        rng.shuffle(candidatas)
+        for e in candidatas[:40]:
+            r = self.traci.simulation.findRoute(arista, e, tipo)
+            if r.edges and r.length < 3500:
+                return e
+        raise ValueError("No se encontró cómo seguir el viaje desde ese punto")
+
     # ------------------------------------------------------------ ego
     def insertar_ego(self, ego_id: str, ruta: RutaEgo, tipo: str, max_espera_pasos: int = 40) -> bool:
         rid = f"r_{ego_id}_{int(self.t * 100)}"
@@ -271,7 +406,7 @@ class MundoSUMO:
             if ego_id in self.traci.vehicle.getIDList():
                 self.traci.vehicle.setSpeedMode(ego_id, MODO_VELOCIDAD_EGO)
                 self.traci.vehicle.setLaneChangeMode(ego_id, MODO_CARRIL_EGO)
-                self.traci.vehicle.setColor(ego_id, (255, 170, 0, 255))
+                self.traci.vehicle.setColor(ego_id, (244, 167, 185, 255))  # cherry blossom
                 return True
         try:
             self.traci.vehicle.remove(ego_id)
@@ -316,6 +451,79 @@ class MundoSUMO:
         return Camino(poli, enlaces, tramos, carril, pos)
 
 
+class PeatonesDinamicos:
+    """Gente a pie lanzada por TraCI con llegadas de Poisson (sin horizonte de tiempo).
+
+    Lee los pares origen-destino de ``sumo/peatones_od.json`` (``demanda.generar_peatones``):
+    peatones de toda el área (grupo "ciudad") y paseantes del Malecón, Buenavista y la
+    Calle 72 (grupo "paseo"). La ruta a pie de cada par se calcula una vez y se reutiliza.
+    """
+
+    def __init__(self, mundo: "MundoSUMO", semilla: int = 0, siembra_s: float = 420.0):
+        self.m = mundo
+        self.rng = random.Random(semilla + 77)
+        self.factor = {"ciudad": 1.0, "paseo": 1.0}
+        self.rutas: dict[tuple, tuple | None] = {}
+        self.n = 0
+        self.grupos: dict[str, tuple] = {}
+        try:
+            pares = json.loads(C.PEATONES_OD.read_text(encoding="utf-8"))["pares"]
+        except (OSError, KeyError, ValueError):
+            pares = []
+        for grupo in sorted({p["grupo"] for p in pares}):
+            lista = [p for p in pares if p["grupo"] == grupo]
+            acum, total = [], 0.0
+            for p in lista:
+                total += p["tasa"]
+                acum.append(total)
+            self.grupos[grupo] = (lista, acum, total)
+        # siembra: la gente que ya venía caminando cuando arranca la simulación
+        for grupo, (lista, acum, total) in self.grupos.items():
+            for _ in range(int(total * siembra_s * self.m.escala_base)):
+                self._lanzar(lista[bisect.bisect_left(acum, self.rng.random() * total)], sembrado=True)
+
+    def _poisson(self, lam: float) -> int:
+        k, p, limite = 0, 1.0, math.exp(-lam)
+        while True:
+            p *= self.rng.random()
+            if p <= limite:
+                return k
+            k += 1
+
+    def paso(self) -> None:
+        dt = self.m.dt
+        for grupo, (lista, acum, total) in self.grupos.items():
+            for _ in range(self._poisson(total * self.factor.get(grupo, 1.0) * self.m.escala_base * dt)):
+                self._lanzar(lista[bisect.bisect_left(acum, self.rng.random() * total)])
+
+    def _lanzar(self, par: dict, sembrado: bool = False) -> None:
+        tr = self.m.traci
+        clave = (par["de"], par["a"])
+        if clave not in self.rutas:
+            try:
+                etapas = tr.simulation.findIntermodalRoute(par["de"], par["a"], modes="")
+                aristas = tuple(e for st in etapas for e in st.edges)
+                self.rutas[clave] = aristas if len(aristas) >= 1 else None
+            except Exception:
+                self.rutas[clave] = None
+        aristas = self.rutas[clave]
+        if not aristas:
+            return
+        try:
+            largo = self.m.largo_carril(f"{aristas[0]}_0")
+            pos = self.rng.uniform(0.0, largo) if sembrado else self.rng.uniform(0.0, min(largo, 8.0))
+            # nunca aparece encima de un vehículo (por si el tramo no tiene andén propio)
+            for vid in tr.edge.getLastStepVehicleIDs(aristas[0]):
+                if abs(tr.vehicle.getLanePosition(vid) - pos) < 15.0:
+                    return
+            self.n += 1
+            pid = f"pd{self.n}"
+            tr.person.add(pid, aristas[0], pos)
+            tr.person.appendWalkingStage(pid, list(aristas), -1)
+        except Exception:
+            pass
+
+
 @dataclass
 class Camino:
     poli: list
@@ -323,6 +531,14 @@ class Camino:
     tramos: list       # (s_inicio, carril)
     carril: str
     pos: float
+
+
+def _dist_segmento(x: float, y: float, p1, p2) -> float:
+    (x1, y1), (x2, y2) = p1, p2
+    dx, dy = x2 - x1, y2 - y1
+    l2 = dx * dx + dy * dy
+    f = 0.0 if l2 <= 1e-9 else max(0.0, min(1.0, ((x - x1) * dx + (y - y1) * dy) / l2))
+    return math.hypot(x - (x1 + f * dx), y - (y1 + f * dy))
 
 
 def _recortar_desde(forma: list, pos: float) -> list:

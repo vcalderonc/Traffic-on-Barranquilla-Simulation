@@ -101,7 +101,8 @@ class VehiculoAutonomo:
         mm = self.percepcion.percibir(self.a_prev)
         p_obs = self.obstaculos.proponer(mm)
         p_nav = self.navegacion.proponer(mm, p_obs.datos["amenazas"])
-        bloqueado = p_nav.carril is not None or "bloquea" in p_nav.motivo
+        # "carril bloqueado" (entrada de la red DQN) solo cuenta para esquivar, no para adelantar
+        bloqueado = (p_nav.carril is not None and p_nav.datos.get("tipo") == "esquivar") or "bloquea" in p_nav.motivo
         obs = construir_observacion(mm, p_obs.datos["amenazas"], p_obs.datos["vulnerables"],
                                     self.perfil, self.perfil_ref, bloqueado, p_obs.acel)
         self.mm, self.obs = mm, obs

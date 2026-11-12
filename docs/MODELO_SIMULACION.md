@@ -23,12 +23,14 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 | Entidad | Atributos | Origen |
 |---|---|---|
 | Red vial | 6 754 tramos, 3 051 nodos, carriles, velocidad máxima, aceras, cebras, 146 semáforos, 22 PARE (primera versión: 2 942 tramos, 50 semáforos, 11 PARE) | OpenStreetMap, convertida con `netconvert` |
-| Vehículo de fondo | tipo (auto 52 %, taxi 18 %, moto 18 %, bus 7 %, camión 5 %), ruta, aceleración, frenado, imperfección del conductor σ | `randomTrips.py`, modelo de seguimiento de Krauss |
-| Peatón de SUMO | ruta a pie por andenes y cebras | `randomTrips.py --pedestrians` |
+| Vehículo de fondo | clase (compacto 19 %, sedán 22 %, camioneta SUV 14 %, pick-up 5 %, Cybertruck 1.5 %, taxi 16 %, moto 15 %, bus 5 %, camión 2.4 %), ruta, aceleración, frenado, imperfección del conductor σ | flujos de corredor y `randomTrips.py --flows --poisson`, modelo de seguimiento de Krauss |
+| Peatón de SUMO | ruta a pie por andenes y cebras (peatones de toda el área y paseantes del Malecón, Buenavista y la Calle 72) | `sumo/peatones_od.json`, lanzados por TraCI (`PeatonesDinamicos`) |
+| Vendedor de semáforo | posición en el carril del ego, espera mientras el semáforo está en rojo | `entorno/eventos.py` |
 | Vehículo autónomo | perfil (automóvil, taxi, bus, camión), ruta, velocidad, 6 agentes, política | este proyecto |
 | Imprevisto | clase (peatón imprudente, perro, iguana, conos, frenada del líder), posición, velocidad de cruce, carriles a cruzar, prudencia | `entorno/eventos.py` |
 | Clima | fricción μ, alcance de sensores, ruido, probabilidad de omisión | `config.CLIMAS` (fijos) y `config.clima_dinamico(hora, lluvia)` |
-| Hora del día | hora (0–24), lluvia, velocidad del ciclo día-noche | opciones del episodio |
+| Hora del día | hora (0–24), lluvia, velocidad del ciclo día-noche, factor de demanda (horas pico) | opciones del episodio, `ciudad.factor_demanda` |
+| Barrio y estrato | estrato aproximado del barrio más cercano (para los vendedores y el visor) | `data/estratos.json`, `ciudad.estrato` |
 | Lugar emblemático | posición, huella, altura (solo visual) | `data/hitos.json` (OSM) |
 | Base de conocimiento | versión del modelo global, historial de aportes | `aprendizaje/fedavg.py` |
 
@@ -41,15 +43,19 @@ software. Este documento lo describe con el vocabulario de modelado y simulació
 * Los episodios del vehículo autónomo se encadenan sobre el **mismo tráfico**: no se
   reinicia SUMO en cada episodio (ahorra tiempo y evita repetir el transitorio).
 * Un episodio termina por **choque**, **llegada**, **tiempo máximo (150 s)** o
-  **bloqueo** (45 s detenido, p. ej. un trancón).
+  **bloqueo** (45 s detenido, p. ej. un trancón; 150 s en vivo y en las grabaciones,
+  donde los recorridos son más largos y en hora pico hay trancones de verdad).
 
 ## 4. Variables aleatorias y distribuciones
 
 | Variable | Distribución | Parámetros |
 |---|---|---|
-| Llegadas de vehículos de fondo | periódica con origen/destino aleatorio (randomTrips) | 1 vehículo cada 1.4 s (red ampliada; 1.1 s en la primera) × escala 0.75; 8× más probable entrar por el borde |
-| Flujos de corredor (red ampliada) | flujo constante por sentido entre los extremos del corredor | Vía 40 600 veh/h; Av. Calle 72 y Av. Carrera 46 400; Calle 98 y Carrera 53 350; Calle 84 y Carrera 51B 300; Avenida del Río 260; Calles 79 y 76 250 (× 0.75) |
-| Llegadas de peatones de fondo | periódica, origen/destino aleatorio | 1 cada 1.6 s (2.5 s en la primera red) |
+| Llegadas de vehículos de fondo | **Poisson** sobre 450 pares origen-destino aleatorios (flujos sin horizonte, D-26) | en total 1 vehículo cada 1.4 s × escala (0.75 en los experimentos, 0.9 en vivo) × factor de la hora (0.3–1.65 con horas pico); 8× más probable entrar por el borde. En E1–E7: viajes periódicos solo hasta t = 4 000 s |
+| Flujos de corredor (red ampliada) | Poisson por sentido entre los extremos del corredor | Vía 40 600 veh/h; Av. Calle 72 y Av. Carrera 46 400; Calle 98 y Carrera 53 350; Calle 84 y Carrera 51B 300; Avenida del Río 260; Calles 79 y 76 250 (× escala × factor de la hora) |
+| Factor de hora pico | interpolación lineal de un perfil horario | 0.3 de madrugada; 1.6 a las 7:30, 1.42 a las 12:30, 1.65 a las 18:00 |
+| Llegadas de peatones de fondo | Poisson, 600 pares origen-destino de hasta 1.2 km | ≈ 4 000 personas/h × escala × perfil horario (en E1–E7: 1 cada 1.6 s hasta t = 4 000 s) |
+| Paseantes | Poisson, 80 pares por zona | Malecón 1 cada 2 s, Buenavista 1 cada 3.5 s, Calle 72 1 cada 4.5 s; perfil que llena el Malecón al atardecer |
+| Vendedor en un rojo | Bernoulli por semáforo en rojo (una vez por semáforo) | p = 0.55 (estratos 1–2), 0.45 (3), 0.30 (4), 0.18 (5), 0.12 (6) × multiplicador de imprevistos; vuelve al andén 0.6–2.2 s después del verde |
 | Imprevistos | **proceso de Poisson en el espacio** recorrido por el ego | tasa base por km: peatón 1.6, animal 0.8, obra 0.6, frenada del líder 0.8; multiplicada por el perfil de la zona |
 | Distancia de aparición | uniforme | peatón/animal 25–85 m; conos 70–92 m |
 | Velocidad de cruce | uniforme | peatón 1.0–1.7 m/s, perro 1.6–3.5 m/s, iguana 0.35–0.8 m/s |

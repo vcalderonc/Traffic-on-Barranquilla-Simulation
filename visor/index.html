@@ -18,22 +18,29 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: #0d1117; color: var(--texto);
     font: 13px/1.35 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; overflow: hidden; }
-  #lienzo { position: fixed; inset: 0; }
+  #lienzo { position: fixed; inset: 0; touch-action: none; }
   .panel { position: fixed; background: var(--panel); border: 1px solid var(--borde);
     border-radius: 10px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  #titulo { top: 12px; left: 12px; padding: 10px 12px; width: 340px; }
+  #titulo { top: 12px; left: 12px; padding: 10px 12px; width: 350px; max-height: calc(100vh - 190px); overflow: auto; }
   #titulo h1 { margin: 0; font-size: 15px; }
   #titulo .sub { color: var(--suave); font-size: 12px; margin-top: 2px; }
   .pestanas { display: flex; gap: 4px; margin-top: 8px; }
   .pestanas button { flex: 1; }
   .modo { margin-top: 8px; display: grid; gap: 6px; }
-  .modo[hidden] { display: none; }
-  label.campo { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 6px; color: var(--suave); font-size: 12px; }
+  .modo[hidden], [hidden] { display: none !important; }
+  label.campo, div.campo { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 6px; color: var(--suave); font-size: 12px; }
+  div.campo { align-items: start; }
   select, input[type=range] { width: 100%; }
   select { background: #0b1016; color: var(--texto); border: 1px solid var(--borde); border-radius: 6px; padding: 5px; font: inherit; }
   .chk { display: inline-flex; align-items: center; gap: 5px; color: var(--suave); font-size: 12px; margin-right: 10px; }
+  .chips { display: grid; gap: 3px; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border: 1px solid var(--borde); border-radius: 6px; color: var(--texto); font-size: 12px; cursor: pointer; }
+  .chip:has(input:checked) { border-color: #4fb3ff; background: rgba(79, 179, 255, .14); }
+  .chip em { color: var(--rosa); font-style: normal; font-size: 10.5px; margin-left: 4px; }
+  .chip b { margin-left: auto; color: #4fb3ff; min-width: 12px; text-align: right; }
+  #pistaMapa { font-size: 12px; color: #9fe6b8; background: rgba(56, 208, 122, .1); border-radius: 6px; padding: 5px 7px; }
   #estadoVivo { font-size: 12px; color: var(--suave); min-height: 16px; }
-  #ego { top: 12px; right: 12px; width: 330px; padding: 12px 14px; max-height: calc(100vh - 150px); overflow: auto; }
+  #ego { top: 12px; right: 12px; width: 330px; padding: 12px 14px; max-height: calc(100vh - 190px); overflow: auto; }
   .fila { display: flex; align-items: center; gap: 12px; }
   .vel { font-size: 38px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
   .vel small { font-size: 13px; color: var(--suave); font-weight: 400; }
@@ -57,11 +64,11 @@
   #accion { font-weight: 600; }
   .det { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 2px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
   .det .tray { color: var(--rojo); font-weight: 600; }
-  .metricas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .metricas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
   .met { text-align: center; background: rgba(255,255,255,.04); border-radius: 6px; padding: 4px 2px; }
   .met b { display: block; font-size: 16px; }
-  .met span { font-size: 10px; color: var(--suave); }
-  #controles { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(900px, calc(100% - 24px)); padding: 9px 12px; }
+  .met span { font-size: 9.5px; color: var(--suave); }
+  #controles { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(980px, calc(100% - 24px)); padding: 9px 12px; }
   #controles .fila { gap: 8px; }
   button { background: rgba(255,255,255,.07); border: 1px solid var(--borde); color: var(--texto);
     border-radius: 7px; padding: 6px 10px; cursor: pointer; font: inherit; white-space: nowrap; }
@@ -75,16 +82,16 @@
   #marcas i { position: absolute; width: 3px; height: 8px; border-radius: 2px; transform: translateX(-1px); }
   #reloj { font-variant-numeric: tabular-nums; color: var(--suave); min-width: 86px; text-align: right; }
   #horaTxt { font-variant-numeric: tabular-nums; min-width: 44px; color: var(--rosa); font-weight: 600; }
-  #leyenda { left: 12px; bottom: 12px; padding: 8px 10px; font-size: 11px; color: var(--suave); max-width: 340px; }
+  #leyenda { left: 12px; bottom: 12px; padding: 8px 10px; font-size: 11px; color: var(--suave); max-width: 300px; }
   #leyenda span { display: inline-flex; align-items: center; gap: 5px; margin-right: 10px; }
   #leyenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
   #carga { position: fixed; inset: 0; display: grid; place-items: center; background: #0d1117; z-index: 9;
     font-size: 15px; color: var(--suave); text-align: center; padding: 20px; }
   #carga b { color: var(--texto); font-size: 18px; display: block; margin-bottom: 6px; }
-  @media (max-width: 1100px) { #leyenda { display: none; } }
+  @media (max-width: 1250px) { #leyenda { display: none; } }
   @media (max-width: 900px) {
-    #ego { width: auto; left: 12px; top: auto; bottom: 150px; max-height: 34vh; }
-    #titulo { right: 12px; width: auto; }
+    #ego { width: auto; left: 12px; top: auto; bottom: 170px; max-height: 30vh; }
+    #titulo { right: 12px; width: auto; max-height: 40vh; }
   }
 </style>
 </head>
@@ -104,7 +111,16 @@
     <select id="recorrido" aria-label="Recorrido grabado"></select>
   </div>
   <div class="modo" id="modoVivo" hidden>
-    <label class="campo">Vía <select id="viaVivo"></select></label>
+    <label class="campo">Recorrido
+      <select id="tipoRuta"><option value="via">Por una vía</option><option value="medida">A la medida (partida y monumentos)</option></select>
+    </label>
+    <div id="cfgVia"><label class="campo">Vía <select id="viaVivo"></select></label></div>
+    <div id="cfgMedida" class="modo" style="margin-top:0" hidden>
+      <label class="campo">Partida <select id="partida"></select></label>
+      <div id="pistaMapa" hidden></div>
+      <div class="campo">Pasar por <div class="chips" id="pasaPor"></div></div>
+      <label class="campo">Llegada <select id="destino"></select></label>
+    </div>
     <label class="campo">Conductor <select id="agenteVivo"></select></label>
     <label class="campo">Velocidad
       <select id="velVivo"><option value="1">tiempo real</option><option value="2">2×</option><option value="4">4×</option></select>
@@ -114,7 +130,7 @@
       <button class="primario" id="btnConducir">▶ Conducir</button>
       <button id="btnDetener" disabled>■ Detener</button>
     </div>
-    <div id="estadoVivo">La hora, la lluvia y el ciclo se toman del panel de ambiente (abajo).</div>
+    <div id="estadoVivo">La hora, la lluvia y el ciclo se toman del panel de ambiente (abajo). En horas pico hay más tráfico.</div>
   </div>
 </div>
 
@@ -143,6 +159,7 @@
     <div class="met"><b id="mChoques">0</b><span>choques</span></div>
     <div class="met"><b id="mCasi">0</b><span>casi-choques</span></div>
     <div class="met"><b id="mBruscas">0</b><span>frenadas bruscas</span></div>
+    <div class="met"><b id="mAdel">0</b><span>adelanta&shy;mientos</span></div>
     <div class="met"><b id="mR">0</b><span>recompensa</span></div>
   </div>
 </div>
@@ -164,28 +181,37 @@
     <label class="chk"><input type="checkbox" id="ciclo"> ciclo día-noche</label>
     <label class="chk"><input type="checkbox" id="lluvia"> lluvia</label>
     <label class="chk" title="Usar la hora y la lluvia de la simulación"><input type="checkbox" id="sincro" checked> hora de la simulación</label>
+    <span style="color:var(--suave); margin-left:auto">Gráficos</span>
+    <select id="calidad" style="width:auto" aria-label="Calidad gráfica"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select>
+    <span id="fps" style="color:var(--suave); font-variant-numeric: tabular-nums; min-width: 46px"></span>
   </div>
-  <div class="fila" style="margin-top:7px; flex-wrap: wrap">
-    <button data-cam="seguir" class="on">Seguir al vehículo</button>
+  <div class="fila" style="margin-top:7px; flex-wrap: wrap; gap: 6px">
+    <button data-cam="seguir" class="on">Seguir</button>
+    <button data-cam="cabina" title="Tecla C">Cabina</button>
     <button data-cam="malecon">Malecón</button>
     <button data-cam="buenavista">Buenavista</button>
+    <button data-cam="ventana">Ventana al Mundo</button>
+    <button data-cam="aleta">Aleta del Tiburón</button>
     <button data-cam="cenital">Cenital</button>
+    <button data-cam="mapa">Mapa</button>
     <button data-cam="libre">Libre</button>
     <button id="btnSensores" class="on">Sensores</button>
     <button id="btnEtiquetas" class="on">Nombres</button>
-    <button id="btnPaneles" title="Tecla H">Ocultar paneles (H)</button>
+    <button id="btnPaneles" title="Tecla H">Ocultar (H)</button>
   </div>
 </div>
 
 <div id="leyenda" class="panel">
-  <span><i style="background:#ffb000"></i>vehículo autónomo</span>
-  <span><i style="background:#ffd600"></i>taxi</span>
-  <span><i style="background:#18a058"></i>bus</span>
+  <span><i style="background:#f4a3bf"></i>Porsche 911 GT (instructor)</span>
+  <span><i style="background:#ffcc00"></i>taxi</span>
+  <span><i style="background:#1e88e5"></i>buseta</span>
   <span><i style="background:#e04f8a"></i>peatón</span>
+  <span><i style="background:#1f6fd1"></i>vendedor</span>
   <span><i style="background:#8a5a2b"></i>perro</span>
   <span><i style="background:#3fae49"></i>iguana</span>
   <span><i style="background:#ff6a00"></i>conos</span>
-  <div style="margin-top:4px">Mapa: © colaboradores de OpenStreetMap (ODbL)</div>
+  <span><i style="background:#50c8ff"></i>ruta</span>
+  <div style="margin-top:4px">Mapa: © colaboradores de OpenStreetMap (ODbL). Modelos de carros: siluetas inspiradas, sin marcas.</div>
 </div>
 
 <script type="importmap">

@@ -112,5 +112,84 @@ class PruebaGeometria(unittest.TestCase):
         self.assertAlmostEqual(y, 2.0)
 
 
+class PruebaCiudad(unittest.TestCase):
+    def test_horas_pico(self):
+        from bq_sim.ciudad import es_hora_pico, factor_demanda, factor_peatones
+        self.assertAlmostEqual(factor_demanda(7.5), 1.60)
+        self.assertAlmostEqual(factor_demanda(18.0), 1.65)
+        self.assertLess(factor_demanda(3.0), 0.5)
+        self.assertTrue(es_hora_pico(7.5) and es_hora_pico(18.0) and es_hora_pico(12.5))
+        self.assertFalse(es_hora_pico(15.0) or es_hora_pico(23.0))
+        self.assertAlmostEqual(factor_demanda(24.0), factor_demanda(0.0))
+        # el Malecón se llena al atardecer y casi nadie camina al mediodía
+        self.assertGreater(factor_peatones(18.5, "paseo"), 3 * factor_peatones(12.0, "paseo"))
+
+    def test_estrato_por_barrio(self):
+        import json
+        from bq_sim.ciudad import barrio, estrato
+        datos = json.loads((Path(__file__).resolve().parents[1] / "data" / "estratos.json").read_text(encoding="utf-8"))
+        for b in datos["barrios"]:
+            self.assertEqual(estrato(b["lon"], b["lat"]), b["estrato"])
+        nombre, est = barrio(-74.8125, 11.0035)
+        self.assertIn(est, range(0, 7))
+
+
+class _Traci:  # TraCI mínimo para probar a Navegación sin SUMO
+    class vehicle:
+        @staticmethod
+        def getBestLanes(_ego):
+            return [("e_0", 100.0, 0.0, 0, True, []), ("e_1", 100.0, 0.0, 0, True, [])]
+
+
+class _Mundo:
+    traci = _Traci
+
+    @staticmethod
+    def permite_autos(_carril):
+        return True
+
+
+def _mm(t, carril, detectados, traseros=()):
+    from bq_sim import config as C
+    from bq_sim.agentes.percepcion import ModeloMundo
+    from bq_sim.entorno.mundo import Camino
+    return ModeloMundo(t=t, v=10.0, a_prev=0.0, v_lim=13.9, limites_proximos=[], detectados=list(detectados),
+                       verdad=[], senal=None, camino=Camino([(0, 0), (200, 0)], [], [(0.0, "e_0")], "e_0", 0.0),
+                       carril_idx=carril, n_carriles_auto=2, clima=C.CLIMAS["despejado"],
+                       extras={"traseros": list(traseros)})
+
+
+class PruebaAdelantar(unittest.TestCase):
+    def test_adelanta_al_lento_y_cuenta(self):
+        from bq_sim.agentes.especialistas import AgenteNavegacion
+        from bq_sim.agentes.percepcion import Objeto
+        lento = Objeto("bus1", "vehiculo", "bus", 25.0, 0.0, 6.0, 2.5, True, False)  # va a 4 m/s
+        nav = AgenteNavegacion(_Mundo, "ego")
+        self.assertIsNone(nav.proponer(_mm(0.0, 0, [lento]), [lento]).carril)   # todavía no: espera 2 s
+        p = nav.proponer(_mm(2.5, 0, [lento]), [lento])
+        self.assertEqual(p.carril, 1)
+        self.assertEqual(p.datos.get("tipo"), "adelantar")
+        nav.proponer(_mm(3.0, 1, []), [])                                     # ya se pasó a la izquierda
+        self.assertEqual(nav.adelantamientos, 1)
+
+    def test_no_adelanta_si_la_izquierda_va_ocupada(self):
+        from bq_sim.agentes.especialistas import AgenteNavegacion
+        from bq_sim.agentes.percepcion import Objeto
+        lento = Objeto("bus1", "vehiculo", "bus", 25.0, 0.0, 6.0, 2.5, True, False)
+        vecino = Objeto("a2", "vehiculo", "auto", 12.0, -3.2, 5.0, 1.8, False, False)  # izquierda, también lento
+        nav = AgenteNavegacion(_Mundo, "ego")
+        nav.proponer(_mm(0.0, 0, [lento, vecino]), [lento])
+        self.assertIsNone(nav.proponer(_mm(2.5, 0, [lento, vecino]), [lento]).carril)
+
+    def test_radar_trasero_veta_el_cambio(self):
+        from bq_sim.agentes.especialistas import AgenteSeguridad
+        from bq_sim.agentes.percepcion import Objeto
+        seg = AgenteSeguridad(PERFILES["automovil"])
+        rapido = Objeto("m1", "vehiculo", "moto", -20.0, -3.2, -9.0, 0.8, False, False)  # se acerca a 9 m/s más
+        self.assertFalse(seg.carril_seguro(_mm(0.0, 0, [], [rapido]), 1))
+        lejos = Objeto("m2", "vehiculo", "moto", -40.0, -3.2, -2.0, 0.8, False, False)
+        self.assertTrue(seg.carril_seguro(_mm(0.0, 0, [], [lejos]), 1))
+
+
 if __name__ == "__main__":
     unittest.main()
