@@ -161,8 +161,14 @@ class AgenteDQN:
         f = min(1.0, self.pasos / max(1, self.hp.eps_pasos))
         return self.hp.eps_inicial + f * (self.hp.eps_final - self.hp.eps_inicial)
 
+    def _x(self, obs) -> np.ndarray:
+        """Las observaciones nuevas se agregan AL FINAL: un modelo con menos entradas usa
+        las primeras ``n_obs`` y sigue funcionando igual que antes (D-36)."""
+        obs = np.asarray(obs, np.float32)
+        return obs[..., : self.n_obs]
+
     def valores_q(self, obs) -> np.ndarray:
-        return self.red.predecir(obs)[0]
+        return self.red.predecir(self._x(obs))[0]
 
     def actuar(self, obs, explorar: bool = True) -> int:
         if explorar and self.rng.random() < self.epsilon():
@@ -177,6 +183,7 @@ class AgenteDQN:
         previos a la memoria de incidentes.
         """
         self.pasos += 1
+        s, s2 = self._x(s), self._x(s2)
         self._pend.append((s, a, r, s2, fin, a_guia))
         terminado = fin > 0 or truncado
         while self._pend and (len(self._pend) >= self.hp.n_pasos or terminado):
@@ -258,7 +265,15 @@ class AgenteDQN:
         return [p.copy() for p in self.red.params]
 
     def fijar_parametros(self, params: list[np.ndarray]) -> None:
-        self.red.params = [np.asarray(p, np.float32).copy() for p in params]
+        """Si ``params`` viene de una red con menos entradas, la primera capa se amplía con
+        ceros: la red nueva empieza actuando igual que la vieja y aprende a usar el resto."""
+        params = [np.asarray(p, np.float32).copy() for p in params]
+        faltan = self.n_obs - params[0].shape[0]
+        if faltan > 0:
+            params[0] = np.vstack([params[0], np.zeros((faltan, params[0].shape[1]), np.float32)])
+        elif faltan < 0:
+            raise ValueError(f"la red tiene {self.n_obs} entradas y los parámetros {params[0].shape[0]}")
+        self.red.params = params
         self.objetivo.copiar_de(self.red)
         self.opt = Adam(self.red.params, self.hp.lr)
 

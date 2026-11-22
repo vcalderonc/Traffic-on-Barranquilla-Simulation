@@ -1,0 +1,7 @@
+modelos/fase2/instructor_s2.npz                         atropellos  2 | choques  2 | casi-atropellos/ep 0.07 | 24.6 km/h
+modelos/fase2/instructor_s6.npz                         atropellos  2 | choques  3 | casi-atropellos/ep 0.07 | 24.0 km/h
+modelos/fase2/instructor_s3.npz                         atropellos  3 | choques  3 | casi-atropellos/ep 0.07 | 25.6 km/h
+modelos/fase2/instructor_s4.npz                         atropellos  3 | choques  6 | casi-atropellos/ep 0.10 | 24.7 km/h
+modelos/instructor_automovil.npz                        atropellos  4 | choques  6 | casi-atropellos/ep 0.17 | 22.1 km/h
+modelos/fase2/instructor_s5.npz                         atropellos  4 | choques  6 | casi-atropellos/ep 0.17 | 22.1 km/h
+modelos/fase2/instructor_s1.npz                         atropellos  4 | choques  6 | casi-atropellos/ep 0.23 | 22.8 km/h

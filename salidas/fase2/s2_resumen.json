@@ -1,0 +1,95 @@
+{
+ "semilla": 2,
+ "desde": "/Users/jaiberdiaz/Projects/Traffic-on-Barranquilla-Simulation/modelos/instructor_automovil.npz",
+ "mejor": {
+  "episodios": 8,
+  "choques": 0,
+  "choques_vulnerables": 0,
+  "casi_vulnerables_por_ep": 0.125,
+  "acelera_ante_conflicto_por_ep": 2.0,
+  "frenadas_bruscas_por_ep": 7.75,
+  "vel_media_kmh": 28.13,
+  "recompensa": 29.17,
+  "tras_episodios": 100
+ },
+ "historial": [
+  {
+   "episodios": 8,
+   "choques": 1,
+   "choques_vulnerables": 0,
+   "casi_vulnerables_por_ep": 0.25,
+   "acelera_ante_conflicto_por_ep": 3.62,
+   "frenadas_bruscas_por_ep": 6.12,
+   "vel_media_kmh": 23.71,
+   "recompensa": 13.31,
+   "tras_episodios": 0
+  },
+  {
+   "episodios": 8,
+   "choques": 2,
+   "choques_vulnerables": 0,
+   "casi_vulnerables_por_ep": 0.125,
+   "acelera_ante_conflicto_por_ep": 1.75,
+   "frenadas_bruscas_por_ep": 6.38,
+   "vel_media_kmh": 30.09,
+   "recompensa": -6.03,
+   "tras_episodios": 50
+  },
+  {
+   "episodios": 8,
+   "choques": 0,
+   "choques_vulnerables": 0,
+   "casi_vulnerables_por_ep": 0.125,
+   "acelera_ante_conflicto_por_ep": 2.0,
+   "frenadas_bruscas_por_ep": 7.75,
+   "vel_media_kmh": 28.13,
+   "recompensa": 29.17,
+   "tras_episodios": 100
+  },
+  {
+   "episodios": 8,
+   "choques": 1,
+   "choques_vulnerables": 1,
+   "casi_vulnerables_por_ep": 0.0,
+   "acelera_ante_conflicto_por_ep": 1.75,
+   "frenadas_bruscas_por_ep": 6.75,
+   "vel_media_kmh": 25.85,
+   "recompensa": 14.1,
+   "tras_episodios": 150
+  },
+  {
+   "episodios": 8,
+   "choques": 1,
+   "choques_vulnerables": 1,
+   "casi_vulnerables_por_ep": 0.125,
+   "acelera_ante_conflicto_por_ep": 0.5,
+   "frenadas_bruscas_por_ep": 6.25,
+   "vel_media_kmh": 25.41,
+   "recompensa": 2.19,
+   "tras_episodios": 200
+  },
+  {
+   "episodios": 8,
+   "choques": 2,
+   "choques_vulnerables": 2,
+   "casi_vulnerables_por_ep": 0.375,
+   "acelera_ante_conflicto_por_ep": 1.25,
+   "frenadas_bruscas_por_ep": 5.88,
+   "vel_media_kmh": 32.07,
+   "recompensa": -20.13,
+   "tras_episodios": 250
+  },
+  {
+   "episodios": 8,
+   "choques": 0,
+   "choques_vulnerables": 0,
+   "casi_vulnerables_por_ep": 0.25,
+   "acelera_ante_conflicto_por_ep": 2.75,
+   "frenadas_bruscas_por_ep": 5.38,
+   "vel_media_kmh": 31.44,
+   "recompensa": 36.68,
+   "tras_episodios": 300
+  }
+ ],
+ "minutos": 41.6
+}

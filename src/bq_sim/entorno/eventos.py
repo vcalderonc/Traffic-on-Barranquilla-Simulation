@@ -68,6 +68,7 @@ class GestorEventos:
         self.p = params or C.ParamEventos()
         self.mult = multiplicador
         self.mult_clase: dict[str, float] = {}  # perfil de imprevistos de la zona
+        self.refuerzo: dict[str, float] = {}    # multiplicador extra por tipo, para entrenar (Fase 2)
         self.rng = mundo.rng
         self.objetos: dict[str, ObjetoEvento] = {}
         self.frenadas: list[dict] = []
@@ -94,7 +95,7 @@ class GestorEventos:
         """Genera nuevos eventos según la distancia recorrida y actualiza los vivos."""
         dist = v_ego * self.m.dt / 1000.0  # km recorridos en este paso
         for tipo, tasa in self.p.tasa_por_km.items():
-            if self.rng.random() < tasa * self.mult * self.mult_clase.get(tipo, 1.0) * dist:
+            if self.rng.random() < tasa * self.mult * self.mult_clase.get(tipo, 1.0) * self.refuerzo.get(tipo, 1.0) * dist:
                 if tipo == "frenada_lider":
                     self._frenada_lider(ego)
                 elif tipo == "animal":
@@ -205,7 +206,8 @@ class GestorEventos:
 
         x, y = tr.vehicle.getPosition(ego)
         lon, lat = self.m.lonlat(x, y)
-        prob = PROB_VENDEDOR.get(estrato(lon, lat), 0.3) * self.mult * self.mult_clase.get("vendedor", 1.0)
+        prob = PROB_VENDEDOR.get(estrato(lon, lat), 0.3) * self.mult * self.mult_clase.get("vendedor", 1.0) \
+            * self.refuerzo.get("vendedor", 1.0)
         if self.rng.random() >= min(0.9, prob):
             return
         arista = tr.vehicle.getRoadID(ego)

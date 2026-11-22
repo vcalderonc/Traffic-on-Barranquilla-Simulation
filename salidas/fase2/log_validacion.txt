@@ -1,0 +1,14 @@
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 6, 'choques_vulnerables': 4, 'casi_vulnerables_por_ep': 0.175, 'acelera_ante_conflicto_por_ep': 2.52, 'frenadas_bruscas_por_ep': 6.2, 'vel_media_kmh': 22.09, 'recompensa': 0.48, 'modelo': 'modelos/instructor_automovil.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 6, 'choques_vulnerables': 4, 'casi_vulnerables_por_ep': 0.225, 'acelera_ante_conflicto_por_ep': 1.88, 'frenadas_bruscas_por_ep': 7.0, 'vel_media_kmh': 22.82, 'recompensa': 1.89, 'modelo': 'modelos/fase2/instructor_s1.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 2, 'choques_vulnerables': 2, 'casi_vulnerables_por_ep': 0.075, 'acelera_ante_conflicto_por_ep': 1.52, 'frenadas_bruscas_por_ep': 5.55, 'vel_media_kmh': 24.61, 'recompensa': 20.21, 'modelo': 'modelos/fase2/instructor_s2.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 3, 'choques_vulnerables': 3, 'casi_vulnerables_por_ep': 0.075, 'acelera_ante_conflicto_por_ep': 1.43, 'frenadas_bruscas_por_ep': 6.7, 'vel_media_kmh': 25.65, 'recompensa': 16.4, 'modelo': 'modelos/fase2/instructor_s3.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 6, 'choques_vulnerables': 3, 'casi_vulnerables_por_ep': 0.1, 'acelera_ante_conflicto_por_ep': 1.52, 'frenadas_bruscas_por_ep': 4.47, 'vel_media_kmh': 24.74, 'recompensa': 6.83, 'modelo': 'modelos/fase2/instructor_s4.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 6, 'choques_vulnerables': 4, 'casi_vulnerables_por_ep': 0.175, 'acelera_ante_conflicto_por_ep': 2.52, 'frenadas_bruscas_por_ep': 6.2, 'vel_media_kmh': 22.09, 'recompensa': 0.48, 'modelo': 'modelos/fase2/instructor_s5.npz'}
+Warning: Could not set locale to 'C'.
+{'episodios': 40, 'choques': 3, 'choques_vulnerables': 2, 'casi_vulnerables_por_ep': 0.075, 'acelera_ante_conflicto_por_ep': 0.82, 'frenadas_bruscas_por_ep': 5.38, 'vel_media_kmh': 24.02, 'recompensa': 17.35, 'modelo': 'modelos/fase2/instructor_s6.npz'}

@@ -14,6 +14,7 @@ Comandos
   vivo           simulación en vivo en el navegador: el usuario elige vía, hora, lluvia y conductor
   gui            abre sumo-gui con el instructor conduciendo por la vía elegida
   solapes        Fase 0: mide carros encima de personas u otros carros en las grabaciones del visor
+  fase2          E8: reentrena al instructor con peatones y animales que se meten en la vía
 """
 from __future__ import annotations
 
@@ -63,6 +64,12 @@ def main(argv=None) -> None:
     so.add_argument("--sin-vehiculos", action="store_true", help="no medir solapes vehículo-vehículo")
     so.add_argument("--datos", default=None, help="carpeta con ciudad.json y recorrido_*.json[.gz] (visor/datos)")
     so.add_argument("--salida", default=None, help="carpeta de resultados (salidas/fase0_solapes)")
+    f2 = sub.add_parser("fase2")
+    f2.add_argument("accion", choices=["entrenar", "validar", "elegir"])
+    f2.add_argument("--semilla", type=int, default=1)
+    f2.add_argument("--episodios", type=int, default=None, help="entrenar: 300; validar: 40")
+    f2.add_argument("--evaluar-cada", type=int, default=50)
+    f2.add_argument("--instalar", action="store_true", help="elegir: copia el mejor a modelos/instructor_automovil.npz")
     a = p.parse_args(argv)
 
     if a.cmd == "red":
@@ -111,6 +118,14 @@ def main(argv=None) -> None:
     elif a.cmd == "gui":
         from . import visor
         visor.abrir_gui(a.via, a.hora, a.lluvia, a.ciclo)
+    elif a.cmd == "fase2":
+        from . import fase2
+        if a.accion == "entrenar":
+            fase2.entrenar_semilla(a.semilla, a.episodios or 300, a.evaluar_cada)
+        elif a.accion == "validar":
+            fase2.validar(a.episodios or 40)
+        else:
+            fase2.elegir(a.instalar)
     elif a.cmd == "solapes":
         from . import solapes
         solapes.medir_todo(a.datos, sub=a.sub, salida=a.salida, con_vehiculos=not a.sin_vehiculos)

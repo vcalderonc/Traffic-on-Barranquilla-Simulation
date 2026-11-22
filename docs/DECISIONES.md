@@ -468,3 +468,41 @@ Sirve para la sustentación: si preguntan "¿por qué no X?", la respuesta está
   y no se contaban. Hay que reentrenarlo con el mundo nuevo (Fase 2).
 * **Pendiente:** solapes entre carros de fondo en cruces (SUMO, `collision.action=warn`),
   que no cambiaron con esta corrección.
+
+### D-36 · El conductor anticipa al peatón o animal que se mete en la vía
+
+* **Problema (tras D-35):** con la posición continua, el instructor chocó contra perros o
+  iguanas en 3 de 5 recorridos. Veía al animal "junto a la vía" y **aceleraba** (+2.8 m/s²)
+  para pasar antes. Eso funcionaba en el mundo anterior, donde el animal se quedaba un
+  carril más allá de donde se veía. La observación solo tenía la distancia lateral, no
+  hacia dónde se movía.
+* **Percepción:** velocidad lateral de peatones y animales (diferencias suavizadas) y
+  predicción de conflicto: entraría al corredor del ego antes de que este llegue a su
+  altura, con 1.5 s de margen (`Objeto.conflicto`, `t_entra`).
+* **Obstáculos y Seguridad (reglas):** ante un conflicto, Obstáculos propone detenerse
+  antes del punto de cruce. Seguridad prohíbe acelerar y, si hace falta frenar a más del
+  35 % de la capacidad, frena ya. El conductor de reglas que da demostraciones usa esa
+  misma cota (antes solo el frenado de emergencia).
+* **DQN:** 3 entradas nuevas **al final** (28 → 31): conflicto, tiempo para entrar y
+  frenado requerido. Un modelo de 28 entradas ignora las nuevas y conduce igual que
+  antes; al cargarlo en una red de 31, la primera capa se amplía con ceros.
+* **Recompensa:** choque con peatón o animal −150 (antes −100), casi-choque −25 (antes −10),
+  y −0.3 por cada paso acelerando con un conflicto.
+* **Resultado solo con las reglas** (instructor sin reentrenar + guardrail, recorridos
+  1–5): de 3 choques a **0**, y 0 solapes del ego con personas. El guardrail interviene
+  11–33 veces por recorrido. El reentrenamiento (E8, `python -m bq_sim fase2`) busca que
+  la política aprenda a no necesitarlo.
+* **Separación lateral:** al regrabar con el instructor reentrenado (E8), un peatón que
+  esperaba sobre la línea del carril (el siguiente estaba ocupado, D-35) quedó a 1.6 m
+  del centro del ego. El ego se detuvo, pero al arrancar pasó a su lado a 15 km/h con
+  0.4 m de separación, y SUMO lo contó como atropello. Ahora Seguridad exige 0.4 m más
+  de corredor (`SEPARACION_VULNERABLE`) para peatones y animales: si alguien está más
+  cerca, el ego espera a que se aparte.
+* **Resultado con el instructor E8 (s2) + guardrail** (recorridos 1–5, 240 s cada uno):
+  **0 choques** y **0 solapes del ego con personas**. El guardrail interviene 10–50
+  pasos por recorrido, sobre todo esperando a peatones junto al carril.
+* **Pendiente:** OSM trae andenes dibujados como vías aparte (p. ej. en la Calle 98 y la
+  Avenida del Río) cuya forma queda a menos de 1 m del centro de un carril, así que carros
+  de fondo pasan sobre peatones de SUMO. Es un problema de la red (`red.py`), no de
+  conducción. También quedan 0–4 roces breves del ego con otro carro en cruces y cebras,
+  sin penetración medible, que vienen del manejo de cruces de SUMO.

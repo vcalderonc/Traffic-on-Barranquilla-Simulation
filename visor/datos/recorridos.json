@@ -7,8 +7,8 @@
   "ruta": "Avenida del Río → Rotonda Malecón 72",
   "duracion_s": 240.0,
   "choques": 0,
-  "casi_choques": 1,
-  "eventos": 23,
+  "casi_choques": 0,
+  "eventos": 21,
   "adelantamientos": 0
  },
  {
@@ -19,9 +19,9 @@
   "ruta": "Avenida del Río → Rotonda Malecón 72",
   "duracion_s": 240.0,
   "choques": 0,
-  "casi_choques": 3,
-  "eventos": 20,
-  "adelantamientos": 0
+  "casi_choques": 2,
+  "eventos": 16,
+  "adelantamientos": 1
  },
  {
   "archivo": "recorrido_3_calle84_lluvia.json.gz",
@@ -29,10 +29,10 @@
   "hora": 15.0,
   "lluvia": true,
   "ruta": "Calle 84",
-  "duracion_s": 16.5,
-  "choques": 1,
-  "casi_choques": 1,
-  "eventos": 5,
+  "duracion_s": 240.0,
+  "choques": 0,
+  "casi_choques": 0,
+  "eventos": 11,
   "adelantamientos": 0
  },
  {
@@ -41,10 +41,10 @@
   "hora": 21.0,
   "lluvia": false,
   "ruta": "Avenida del Río → Rotonda Malecón 72",
-  "duracion_s": 46.5,
-  "choques": 1,
+  "duracion_s": 240.0,
+  "choques": 0,
   "casi_choques": 1,
-  "eventos": 5,
+  "eventos": 18,
   "adelantamientos": 0
  },
  {
@@ -53,10 +53,10 @@
   "hora": 19.6,
   "lluvia": false,
   "ruta": "Calle 98",
-  "duracion_s": 138.5,
-  "choques": 1,
+  "duracion_s": 240.0,
+  "choques": 0,
   "casi_choques": 0,
-  "eventos": 7,
+  "eventos": 11,
   "adelantamientos": 0
  },
  {

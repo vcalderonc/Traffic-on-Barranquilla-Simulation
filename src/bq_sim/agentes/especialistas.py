@@ -98,6 +98,13 @@ class AgenteSenales:
 
 # -------------------------------------------------------------- Obstáculos
 MARGEN_CLASE = {"vehiculo": 2.5, "peaton": 4.0, "animal": 3.5, "obra": 3.0}
+SEPARACION_VULNERABLE = 0.4  # m extra de corredor lateral para pasar junto a un peatón o animal
+
+
+def conflictos_vulnerables(mm: ModeloMundo) -> list[Objeto]:
+    """Peatones y animales que se meterán en la trayectoria antes de que el ego pase (D-36)."""
+    return sorted((o for o in mm.detectados if o.conflicto and not o.en_trayectoria and o.s > -1.0),
+                  key=lambda o: o.s)
 
 
 class AgenteObstaculos:
@@ -116,6 +123,7 @@ class AgenteObstaculos:
         am = self.amenazas(mm)
         vulnerables = sorted((o for o in mm.detectados if o.cerca_via and not o.en_trayectoria),
                              key=lambda o: o.s)
+        conflictos = conflictos_vulnerables(mm)
         b_max = self.perfil.frenado_max(mm.clima.mu)
         a_sug = self.perfil.acel_max
         motivo = ""
@@ -132,11 +140,18 @@ class AgenteObstaculos:
             motivo = f"{o.subtipo} a {o.s:.0f} m (TTC {o.ttc:.1f} s)" if o.ttc < 99 else f"{o.subtipo} a {o.s:.0f} m"
             if v_obj < 0.5 and o.clase in ("obra", "vehiculo"):
                 motivo += ", bloquea el carril"
-        elif vulnerables:
+        if conflictos and (not am or conflictos[0].s < am[0].s):
+            # se está metiendo en la vía: prepararse para detenerse antes del punto de cruce
+            o = conflictos[0]
+            a_conf = -decel_para_detenerse(mm.v, o.s - MARGEN_CLASE[o.clase])
+            if a_conf < a_sug:
+                a_sug = max(-b_max, a_conf)
+                motivo = f"{o.subtipo} entrando a la vía a {o.s:.0f} m (entra en {o.t_entra:.1f} s)"
+        if not motivo and vulnerables:
             o = vulnerables[0]
             motivo = f"{o.subtipo} junto a la vía a {o.s:.0f} m"
         return Propuesta(self.nombre, acel=a_sug, motivo=motivo,
-                         datos={"amenazas": am, "vulnerables": vulnerables})
+                         datos={"amenazas": am, "vulnerables": vulnerables, "conflictos": conflictos})
 
 
 # -------------------------------------------------------------- Navegación
@@ -270,6 +285,7 @@ class AgenteSeguridad:
         self.ttc_critico = ttc_critico
         self.activo = activo
         self.veto_teorico = False
+        self.acel_teorica = INF  # cota que impondría (la usa el conductor de reglas al demostrar)
 
     def carril_seguro(self, mm: ModeloMundo, destino: int) -> bool:
         lado = 1 if destino < mm.carril_idx else -1  # carril de índice menor = a la derecha
@@ -292,6 +308,7 @@ class AgenteSeguridad:
         veto en ``veto_teorico`` para que el conductor de reglas pueda dar demostraciones."""
         p = self._evaluar(mm, amenazas, carril_pedido)
         self.veto_teorico = p.veto
+        self.acel_teorica = p.acel_max if p.veto else INF
         return p if self.activo else Propuesta(self.nombre)
 
     def _evaluar(self, mm: ModeloMundo, amenazas: list[Objeto], carril_pedido: int | None) -> Propuesta:
@@ -307,6 +324,33 @@ class AgenteSeguridad:
             if o.v_rel > 0 and decel_para_detenerse(o.v_rel, gap) > 0.9 * b_max:
                 veto, a = True, -b_max
                 motivo = f"distancia de frenado insuficiente: {o.subtipo} a {o.s:.0f} m"
+                break
+        if not veto:
+            # peatón o animal que se mete en la vía (D-36): prohibido acelerar y, si hace
+            # falta frenar fuerte para detenerse antes del cruce, frenar ya
+            for o in conflictos_vulnerables(mm):
+                req = decel_para_detenerse(mm.v, o.s - 1.5)
+                if req >= 0.9 * b_max:
+                    a = -b_max
+                elif req >= 0.35 * b_max:
+                    a = -min(b_max, 1.15 * req)
+                else:
+                    a = 0.0
+                veto, motivo = True, f"{o.subtipo} entrando a la vía a {o.s:.0f} m: no acelerar"
+                if a < 0:
+                    motivo = f"{o.subtipo} entrando a la vía a {o.s:.0f} m: frenar ({-a:.1f} m/s²)"
+                break
+        if not veto:
+            # no pasar rozando a un peatón o animal que espera en la vía (p. ej. sobre la línea
+            # del carril): exige SEPARACION_VULNERABLE m más que el corredor del carro (D-36)
+            for o in mm.detectados:
+                if o.clase not in ("peaton", "animal") or o.en_trayectoria or not -0.5 < o.s < 25.0:
+                    continue
+                corredor = self.perfil.ancho_m / 2 + o.ancho / 2 + 0.25 + SEPARACION_VULNERABLE
+                if abs(o.lateral) >= corredor:
+                    continue
+                a = min(a, 0.0 if o.s <= 1.5 else -decel_para_detenerse(mm.v, o.s - 1.5))
+                veto, motivo = True, f"{o.subtipo} muy cerca del carril a {o.s:.0f} m: esperar a que se aparte"
                 break
         carril = None
         if carril_pedido is not None and not self.carril_seguro(mm, carril_pedido):

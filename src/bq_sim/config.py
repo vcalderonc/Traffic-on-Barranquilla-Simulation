@@ -130,6 +130,10 @@ class Recompensas:
     progreso: float = 0.10           # por paso a la velocidad límite (proporcional)
     llegada: float = 10.0
     lento_sin_motivo: float = -0.03  # por paso por debajo del 40 % del límite sin motivo
+    # peatones y animales (D-36): castigo mayor y castigo por acelerar cuando uno se mete en la vía
+    choque_vulnerable: float = -150.0        # reemplaza a ``choque`` si es con peatón o animal
+    casi_choque_vulnerable: float = -25.0    # reemplaza a ``casi_choque``
+    acelerar_ante_conflicto: float = -0.3    # por paso acelerando (> 0.2 m/s²) con un conflicto
 
 
 @dataclass
