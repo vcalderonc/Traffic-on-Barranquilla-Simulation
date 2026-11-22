@@ -1,0 +1,110 @@
+[
+ {
+  "recorrido": "recorrido_1_malecon_atardecer",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 4,
+  "fondo_persona": 15,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_1_malecon_atardecer",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 4,
+  "fondo_persona": 15,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_2_malecon_dia",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 5,
+  "fondo_persona": 30,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_2_malecon_dia",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 5,
+  "fondo_persona": 29,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_3_calle84_lluvia",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 3,
+  "fondo_persona": 38,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_3_calle84_lluvia",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 3,
+  "fondo_persona": 44,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 1
+ },
+ {
+  "recorrido": "recorrido_4_malecon_noche",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 11,
+  "fondo_persona": 22,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_4_malecon_noche",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 11,
+  "fondo_persona": 22,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_5_buenavista_noche",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 3,
+  "fondo_persona": 15,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 9
+ },
+ {
+  "recorrido": "recorrido_5_buenavista_noche",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 3,
+  "fondo_persona": 15,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 10
+ },
+ {
+  "recorrido": "recorrido_6_via40_lluvia_choque_iguana",
+  "huella": "sumo",
+  "choques_registrados": 1,
+  "ego_persona": 1,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_6_via40_lluvia_choque_iguana",
+  "huella": "visual",
+  "choques_registrados": 1,
+  "ego_persona": 1,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ }
+]

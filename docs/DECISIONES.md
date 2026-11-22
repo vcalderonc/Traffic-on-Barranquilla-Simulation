@@ -438,3 +438,33 @@ Sirve para la sustentación: si preguntan "¿por qué no X?", la respuesta está
   `netconvert` pasa a menos de 1.5 m del andén, así que un peatón parado en el andén
   "aparecía" dentro de la trayectoria al girar. Ahora solo cuenta como atropello si el
   peatón está donde circulan carros: en una cebra o en una calzada sin andén.
+
+### D-35 · Una sola posición para el imprevisto que cruza, y puestos fuera de la vía
+
+* **Cómo se detectó (Fase 0):** `python -m bq_sim solapes` mide, cuadro por cuadro, los
+  carros dibujados encima de personas en las grabaciones del visor. En las 6 grabaciones
+  anteriores había 27 solapes del ego y 121 de carros de fondo con personas, con
+  **0 choques registrados**. Ninguno era con peatones normales de SUMO.
+* **Causa 1, imprevistos:** SUMO (y con él la percepción) tenía al peatón, vendedor o
+  animal en el centro de un carril y lo cambiaba de carril solo al terminar de cruzarlo, y
+  solo si el siguiente estaba libre. El visor, en cambio, lo dibujaba avanzando hacia el
+  carril siguiente. En 22 de 23 solapes del ego, la percepción lo veía a ~3 m (un carril)
+  de donde se dibujaba, fuera de la trayectoria, y el ego pasaba a 45–55 km/h.
+* **Decisión:** `GestorEventos` lleva una posición lateral continua (`f` entre los centros
+  de dos carriles) y la publica en `mundo.posiciones_eventos`. Es la única verdad: la usan
+  la percepción, el evaluador (verificación geométrica del atropello, también para los
+  `obs_*`) y el visor. SUMO cambia el objeto de carril cuando su centro cruza la línea
+  divisoria; si el carril siguiente está ocupado, el objeto espera **sobre la línea**. Los
+  choques que SUMO detecta por carril se siguen contando (criterio conservador).
+* **Causa 2, puestos:** 85 de los 398 puestos de vendedores (con su gente) quedaban en la
+  calzada, una cebra o un cruce, donde SUMO no sabe que existen. Ahora un puesto solo se
+  acepta si el puesto, el vendedor y los clientes quedan fuera de la vía. Si no, se aleja
+  del borde hasta 4.5 m o se descarta (quedan 327).
+* **Resultado** (mismas semillas, recorridos 1–5, `salidas/fase1_solapes/`): los solapes
+  del ego con personas bajan de 20 a 1, y ese 1 es un choque que ahora sí se registra.
+  Los de carros de fondo bajan de 229 a 5, todos con peatones de SUMO en andén o cebra.
+  **Consecuencia:** el instructor, entrenado en el mundo anterior, ahora choca con
+  perros o iguanas en 3 de los 5 recorridos. Antes esos choques ocurrían solo en pantalla
+  y no se contaban. Hay que reentrenarlo con el mundo nuevo (Fase 2).
+* **Pendiente:** solapes entre carros de fondo en cruces (SUMO, `collision.action=warn`),
+  que no cambiaron con esta corrección.

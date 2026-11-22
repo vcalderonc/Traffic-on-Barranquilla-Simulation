@@ -163,11 +163,14 @@ class ConduccionBarranquillaEnv(gym.Env):
             # atropello de peatones de SUMO: verificación geométrica, solo si el peatón está
             # donde circulan carros (cebra o calzada sin andén). En las esquinas, la curva de
             # giro de la red pasa a menos de 1.5 m del andén y un peatón quieto en el andén
-            # contaba como atropellado aunque el carro no lo tocara (D-34)
+            # contaba como atropellado aunque el carro no lo tocara (D-34). Los imprevistos que
+            # cruzan (peatón, vendedor, animal) se verifican igual con su posición continua: SUMO
+            # solo ve el carril donde está su centro y no detecta el roce lateral (D-35)
             if not colisiones:
                 for o in mm_despues.verdad:
-                    if o.clase == "peaton" and o.en_trayectoria and not o.id.startswith("obs_") and o.s < 0.3 \
-                            and self._peaton_en_calzada(o.id):
+                    if o.clase not in ("peaton", "animal") or not o.en_trayectoria or o.s >= 0.3:
+                        continue
+                    if o.id.startswith("obs_") or (o.clase == "peaton" and self._peaton_en_calzada(o.id)):
                         colisiones.append(o.id)
                         break
         rec, terminado = self.eval.paso(self.mundo, mm_antes, mm_despues, d, colisiones, llego)

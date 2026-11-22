@@ -44,7 +44,9 @@ class ObjetoEvento:
     t_carril: float           # tiempo para cruzar un carril (s)
     espera_inicial: float     # tiempo quieto en el andén antes de cruzar
     imprudente: bool
-    k: int = 0                # índice actual dentro de ``carriles``
+    k: int = 0                # índice actual dentro de ``carriles`` (el carril de donde viene)
+    f: float = 0.0            # avance lateral hacia ``carriles[k + 1]`` (0 = centro de k, 1 = centro de k+1)
+    en_siguiente: bool = False  # en SUMO ya ocupa ``carriles[k + 1]`` (pasó la línea divisoria, f >= 0.5)
     t_entrada: float = 0.0
     t_pausa_hasta: float = 0.0
     regresa: bool = False
@@ -73,6 +75,9 @@ class GestorEventos:
         self._n = 0
         self._ego: str | None = None
         self._ultimo_rojo: tuple = ("", -1e9)
+        # posición continua de cada imprevisto: la única verdad que usan la percepción, el
+        # evaluador y el visor (D-35). En SUMO el objeto ocupa el carril donde está su centro.
+        self.m.posiciones_eventos = {}
 
     # ------------------------------------------------------------ ciclo
     def reiniciar(self) -> None:
@@ -83,6 +88,7 @@ class GestorEventos:
             self._liberar_lider(f)
         self.frenadas.clear()
         self.registro.clear()
+        self.m.posiciones_eventos = {}
 
     def paso(self, ego: str, v_ego: float) -> None:
         """Genera nuevos eventos según la distancia recorrida y actualiza los vivos."""
@@ -100,6 +106,7 @@ class GestorEventos:
         self._ego = ego
         self._vendedor(ego, v_ego)
         self._actualizar()
+        self.m.posiciones_eventos = {ob.id: self.posicion(ob) for ob in self.objetos.values() if ob.vivo}
 
     # ----------------------------------------------------------- creación
     def _punto_adelante(self, ego: str, d: float):
@@ -292,45 +299,80 @@ class GestorEventos:
                 if t - ob.t_creado > 75.0:  # nunca se queda para siempre
                     self._retirar(ob)
                     continue
-                if ob.espera_en is not None and ob.k == ob.espera_en and t - ob.t_entrada >= ob.t_carril:
+                if ob.espera_en is not None and ob.k == ob.espera_en and ob.f == 0.0:
                     sem = self._estado_semaforo(self._ego)
                     if sem is not None and sem[3].lower() in ("r", "y", "u"):
-                        continue  # sigue ofreciendo mientras esté en rojo
+                        continue  # sigue ofreciendo, en el centro del carril, mientras esté en rojo
                     ob.espera_en = None  # cambió a verde: termina la venta y se devuelve
                     ob.t_pausa_hasta = t + self.rng.uniform(0.6, 2.2)
                     continue
             if t < ob.t_pausa_hasta:
                 continue
-            espera = ob.espera_inicial if ob.k == 0 else 0.0
-            if t - ob.t_entrada < ob.t_carril + espera:
-                # perro: puede detenerse a mitad del carril o devolverse
-                if ob.subtipo == "perro" and ob.k > 0 and self.rng.random() < 0.01:
-                    if self.rng.random() < 0.6:
-                        ob.t_pausa_hasta = t + self.rng.uniform(0.5, 2.5)
-                    elif not ob.regresa:
-                        ob.regresa = True
-                        ob.carriles = ob.carriles[:ob.k + 1][::-1]
-                        ob.k = 0
-                        ob.t_entrada = t
+            if ob.k == 0 and ob.f == 0.0 and t - ob.t_entrada < ob.espera_inicial:
+                continue  # todavía en el andén, mirando antes de cruzar
+            # perro: puede detenerse a mitad del carril o devolverse
+            if ob.subtipo == "perro" and (ob.k > 0 or ob.f > 0.0) and self.rng.random() < 0.01:
+                if self.rng.random() < 0.6 or ob.regresa or ob.k + 1 >= len(ob.carriles):
+                    ob.t_pausa_hasta = t + self.rng.uniform(0.5, 2.5)
+                else:
+                    # da media vuelta donde está: el tramo actual se recorre al revés
+                    ob.regresa = True
+                    ob.carriles = [ob.carriles[ob.k + 1]] + ob.carriles[:ob.k + 1][::-1]
+                    ob.k, ob.f = 0, 1.0 - ob.f
+                    ob.en_siguiente = not ob.en_siguiente  # SUMO no se mueve: cambia cuál extremo es "siguiente"
+                    ob.espera_inicial = 0.0
                 continue
-            # pasar al siguiente carril
-            if ob.k + 1 >= len(ob.carriles):
-                self._retirar(ob)
-                continue
-            sig = ob.carriles[ob.k + 1]
-            if not self._libre(ob, sig):
-                continue
-            try:
-                tr.vehicle.moveTo(ob.id, f"{ob.arista}_{sig}", ob.pos)
-                tr.vehicle.setSpeed(ob.id, 0.0)
-                ob.k += 1
-                ob.t_entrada = t
-            except Exception:
-                self._retirar(ob)
+            self._avanzar(ob)
         for f in list(self.frenadas):
             if t >= f["hasta"]:
                 self._liberar_lider(f)
                 self.frenadas.remove(f)
+
+    def _avanzar(self, ob: ObjetoEvento) -> None:
+        """Avance lateral continuo. SUMO cambia el carril justo cuando el centro cruza la línea
+        divisoria; si el carril siguiente está ocupado, el objeto espera sobre la línea."""
+        f = min(1.0, ob.f + self.m.dt / ob.t_carril)
+        ultimo = ob.k + 1 >= len(ob.carriles)
+        if f >= 0.5 and not ob.en_siguiente:
+            if ultimo:  # salió del último carril (al andén o al separador)
+                self._retirar(ob)
+                return
+            sig = ob.carriles[ob.k + 1]
+            if not self._libre(ob, sig):
+                ob.f = max(ob.f, 0.499)
+                return
+            try:
+                tr = self.m.traci
+                tr.vehicle.moveTo(ob.id, f"{ob.arista}_{sig}", ob.pos)
+                tr.vehicle.setSpeed(ob.id, 0.0)
+            except Exception:
+                self._retirar(ob)
+                return
+            ob.en_siguiente = True
+        if f >= 1.0 and not ultimo:
+            ob.k += 1
+            ob.f = 0.0
+            ob.en_siguiente = False
+            ob.t_entrada = self.m.t
+        else:
+            ob.f = f
+
+    def posicion(self, ob: ObjetoEvento) -> tuple[float, float, float]:
+        """Posición continua (x, y, rumbo en rad) del imprevisto: entre los centros de dos carriles."""
+        x0, y0, rumbo = punto_en(self.m.forma_carril(f"{ob.arista}_{ob.carriles[ob.k]}"), ob.pos)
+        if ob.subtipo == "conos":
+            return x0, y0, rumbo
+        if ob.k + 1 < len(ob.carriles):
+            x1, y1, _ = punto_en(self.m.forma_carril(f"{ob.arista}_{ob.carriles[ob.k + 1]}"), ob.pos)
+        elif ob.k > 0:  # último carril: sale hacia afuera, en la misma dirección en que venía
+            xp, yp, _ = punto_en(self.m.forma_carril(f"{ob.arista}_{ob.carriles[ob.k - 1]}"), ob.pos)
+            x1, y1 = 2 * x0 - xp, 2 * y0 - yp
+        else:
+            ancho = self.m.ancho_carril(f"{ob.arista}_{ob.carriles[ob.k]}")
+            x1, y1 = x0 + math.sin(rumbo) * ancho, y0 - math.cos(rumbo) * ancho
+        if (x1, y1) != (x0, y0):
+            rumbo = math.atan2(y1 - y0, x1 - x0)
+        return x0 + ob.f * (x1 - x0), y0 + ob.f * (y1 - y0), rumbo
 
     # ------------------------------------------------------ frenada súbita
     def _frenada_lider(self, ego: str) -> None:
@@ -362,21 +404,12 @@ class GestorEventos:
 
     # ------------------------------------------------------ visor
     def posiciones_render(self) -> list[dict]:
-        """Posición suavizada (cruce lateral interpolado) para el visor 3D."""
+        """Posición de cada imprevisto para el visor 3D: la misma que usan percepción y evaluador."""
         out = []
-        t = self.m.t
         for ob in self.objetos.values():
             if not ob.vivo:
                 continue
-            k = ob.carriles[ob.k]
-            forma = self.m.forma_carril(f"{ob.arista}_{k}")
-            x, y, rumbo = punto_en(forma, ob.pos)
-            if ob.subtipo != "conos" and ob.k + 1 < len(ob.carriles) and t >= ob.t_pausa_hasta:
-                espera = ob.espera_inicial if ob.k == 0 else 0.0
-                f = max(0.0, min(1.0, (t - ob.t_entrada - espera) / ob.t_carril))
-                x2, y2, _ = punto_en(self.m.forma_carril(f"{ob.arista}_{ob.carriles[ob.k + 1]}"), ob.pos)
-                x, y = x + f * (x2 - x), y + f * (y2 - y)
-                rumbo = math.atan2(y2 - y, x2 - x) if (x2, y2) != (x, y) else rumbo
+            x, y, rumbo = self.m.posiciones_eventos.get(ob.id) or self.posicion(ob)
             out.append({"id": ob.id, "tipo": ob.subtipo, "x": round(x, 2), "y": round(y, 2),
                         "rumbo": round(rumbo, 3)})
         return out

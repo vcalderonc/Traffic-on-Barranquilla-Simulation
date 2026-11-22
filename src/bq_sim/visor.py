@@ -396,13 +396,32 @@ def _puestos(red, ciudad, ox, oy, estrato_xy) -> list:
     """
     import random
 
+    from .solapes import Lugares
+
     rng = random.Random(98)
     rejilla, celda = _rejilla_edificios(ciudad)
+    lugares = Lugares(ciudad)
     out = []
 
-    def poner(x, y, rumbo, tipo, est):
-        if _libre_de_edificios(ciudad, rejilla, celda, x - ox, y - oy):
-            out.append([R(x - ox), R(y - oy), round(rumbo, 2), tipo, est])
+    def fuera_de_la_via(x, y, rumbo) -> bool:
+        # el puesto, el vendedor (1.1 m detrás) y los clientes (1.5-2.9 m al frente, ±1.1 m a
+        # los lados), con la misma geometría que construirPuestos() del visor (D-35)
+        fx, fy = math.sin(rumbo), -math.cos(rumbo)
+        for d in (-1.1, 0.0, 1.5, 2.2, 2.9):
+            for lat in (-1.1, 0.0, 1.1):
+                if lugares.clase(x + fx * d + fy * lat, y + fy * d - fx * lat) in ("calzada", "cebra", "cruce"):
+                    return False
+        return True
+
+    def poner(x, y, rumbo, tipo, est, afuera=None):
+        # si el sitio cae en la vía, se aleja del borde (afuera = dirección hacia el andén)
+        pasos = (0.0, 1.5, 3.0, 4.5) if afuera else (0.0,)
+        for d in pasos:
+            px, py = x + (afuera[0] * d if afuera else 0.0), y + (afuera[1] * d if afuera else 0.0)
+            if fuera_de_la_via(px - ox, py - oy, rumbo) and _libre_de_edificios(ciudad, rejilla, celda, px - ox, py - oy):
+                out.append([R(px - ox), R(py - oy), round(rumbo, 2), tipo, est])
+                return True
+        return False
 
     # esquinas con semáforo
     for tls in red.getTrafficLights():
@@ -422,7 +441,8 @@ def _puestos(red, ciudad, ox, oy, estrato_xy) -> list:
             atras = rng.uniform(6, 14)
             x = x2 - math.cos(ang) * atras + math.sin(ang) * ancho
             y = y2 - math.sin(ang) * atras - math.cos(ang) * ancho
-            poner(x, y, ang + math.pi / 2, rng.choice((0, 0, 1, 2)) if est <= 4 else 2, est)
+            poner(x, y, ang + math.pi / 2, rng.choice((0, 0, 1, 2)) if est <= 4 else 2, est,
+                  afuera=(math.sin(ang), -math.cos(ang)))
     # corredores comerciales
     for e in red.getEdges():
         if e.getName() not in CORREDORES_COMERCIALES or not e.allows("passenger"):
@@ -442,7 +462,8 @@ def _puestos(red, ciudad, ox, oy, estrato_xy) -> list:
             while siguiente <= acumulado + seg:
                 f = (siguiente - acumulado) / seg
                 x, y = x1 + f * (x2 - x1) + nx * ancho, y1 + f * (y2 - y1) + ny * ancho
-                poner(x, y, math.atan2(y2 - y1, x2 - x1) + math.pi / 2, rng.choice((0, 1, 1, 2)), est)
+                poner(x, y, math.atan2(y2 - y1, x2 - x1) + math.pi / 2, rng.choice((0, 1, 1, 2)), est,
+                      afuera=(nx, ny))
                 siguiente += rng.uniform(70, 160) * (1.8 if est >= 4 else 1.0)
             acumulado += seg
     # kioscos y carritos del Malecón (dentro del parque lineal)
@@ -457,8 +478,7 @@ def _puestos(red, ciudad, ox, oy, estrato_xy) -> list:
             if puestos >= n:
                 break
             x, y = rng.uniform(min(xs), max(xs)), rng.uniform(min(ys), max(ys))
-            if _dentro(pts, x, y):
-                poner(x, y, rng.uniform(0, 6.28), rng.choice((3, 3, 0, 2)), estrato_xy(x, y))
+            if _dentro(pts, x, y) and poner(x, y, rng.uniform(0, 6.28), rng.choice((3, 3, 0, 2)), estrato_xy(x, y)):
                 puestos += 1
     return out
 

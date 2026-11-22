@@ -117,6 +117,7 @@ class AgentePercepcion:
         out: list[Objeto] = []
         self.traseros = []  # radar trasero: vehículos que vienen detrás (para cambiar de carril)
         ctx = tr.vehicle.getContextSubscriptionResults(self.ego) or {}
+        continuas = getattr(self.m, "posiciones_eventos", {})
         for vid, var in ctx.items():
             if vid == self.ego:
                 continue
@@ -125,6 +126,15 @@ class AgentePercepcion:
             largo, ancho = var[tc.VAR_LENGTH], var[tc.VAR_WIDTH]
             hx, hy = math.sin(ang), math.cos(ang)  # SUMO: 0 = norte, horario
             clase, sub = clase_de_tipo(var[tc.VAR_TYPE])
+            if vid in continuas and sub != "conos":
+                # peatón, animal o vendedor que cruza: SUMO solo sabe en qué carril está; la
+                # posición real es la continua del gestor de eventos (D-35)
+                x, y, _ = continuas[vid]
+                s, lateral, _ = proyectar(camino.poli, x, y)
+                s -= largo / 2
+                if -3.0 <= s <= 120.0:
+                    out.append(self._clasificar(vid, clase, sub, s, lateral, v_ego, ancho, x, y))
+                continue
             s1, lat1, rumbo = proyectar(camino.poli, x, y)
             s2, lat2, _ = proyectar(camino.poli, x - largo * hx, y - largo * hy)
             s = min(s1, s2)

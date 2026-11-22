@@ -1,58 +1,63 @@
 [
  {
-  "archivo": "recorrido_1_malecon_atardecer.json",
+  "archivo": "recorrido_1_malecon_atardecer.json.gz",
   "via": "Avenida del Río",
   "hora": 17.2,
   "lluvia": false,
-  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
+  "ruta": "Avenida del Río → Rotonda Malecón 72",
   "duracion_s": 240.0,
   "choques": 0,
-  "casi_choques": 0,
-  "eventos": 27
+  "casi_choques": 1,
+  "eventos": 23,
+  "adelantamientos": 0
  },
  {
-  "archivo": "recorrido_2_malecon_dia.json",
+  "archivo": "recorrido_2_malecon_dia.json.gz",
   "via": "Avenida del Río",
   "hora": 10.0,
   "lluvia": false,
-  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
+  "ruta": "Avenida del Río → Rotonda Malecón 72",
   "duracion_s": 240.0,
   "choques": 0,
-  "casi_choques": 2,
-  "eventos": 20
+  "casi_choques": 3,
+  "eventos": 20,
+  "adelantamientos": 0
  },
  {
-  "archivo": "recorrido_3_calle84_lluvia.json",
+  "archivo": "recorrido_3_calle84_lluvia.json.gz",
   "via": "Calle 84",
   "hora": 15.0,
   "lluvia": true,
   "ruta": "Calle 84",
-  "duracion_s": 240.0,
-  "choques": 0,
-  "casi_choques": 0,
-  "eventos": 10
+  "duracion_s": 16.5,
+  "choques": 1,
+  "casi_choques": 1,
+  "eventos": 5,
+  "adelantamientos": 0
  },
  {
-  "archivo": "recorrido_4_malecon_noche.json",
+  "archivo": "recorrido_4_malecon_noche.json.gz",
   "via": "Avenida del Río",
   "hora": 21.0,
   "lluvia": false,
-  "ruta": "Avenida del Río → Rotonda Malecón 72 → Rotonda Aleta del Tiburón",
-  "duracion_s": 240.0,
-  "choques": 0,
+  "ruta": "Avenida del Río → Rotonda Malecón 72",
+  "duracion_s": 46.5,
+  "choques": 1,
   "casi_choques": 1,
-  "eventos": 30
+  "eventos": 5,
+  "adelantamientos": 0
  },
  {
-  "archivo": "recorrido_5_buenavista_noche.json",
+  "archivo": "recorrido_5_buenavista_noche.json.gz",
   "via": "Calle 98",
   "hora": 19.6,
   "lluvia": false,
   "ruta": "Calle 98",
-  "duracion_s": 240.0,
-  "choques": 0,
+  "duracion_s": 138.5,
+  "choques": 1,
   "casi_choques": 0,
-  "eventos": 10
+  "eventos": 7,
+  "adelantamientos": 0
  },
  {
   "archivo": "recorrido_6_via40_lluvia_choque_iguana.json",
