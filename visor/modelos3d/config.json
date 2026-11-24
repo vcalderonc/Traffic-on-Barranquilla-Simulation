@@ -1,0 +1,33 @@
+{
+  "vehiculos": {
+    "sedan":      { "archivo": "NormalCar1.glb" },
+    "sedanLujo":  { "archivo": "NormalCar2.glb" },
+    "hatch":      { "archivo": "NormalCar2.glb" },
+    "mustang":    { "archivo": "NormalCar1.glb" },
+    "modeloY":    { "archivo": "SUV.glb" },
+    "taxi":       { "archivo": "Taxi.glb", "pintura": false },
+    "suv":        { "archivo": "SUV.glb" },
+    "prado":      { "archivo": "SUV.glb" },
+    "hilux":      { "archivo": "SUV.glb" },
+    "cybertruck": { "archivo": "SUV.glb" },
+    "bus":        { "archivo": "SchoolBus.glb", "ancho": 2.4 },
+    "camion":     { "archivo": "truck.glb", "ancho": 2.5, "pintura": false },
+    "moto":       { "archivo": "motorcycle.glb", "girar": 180,
+                    "conductor": { "archivo": "Casual_Male.glb", "animacion": "SitDown", "altura": 1.7, "y": 0.35, "z": 0.9 } }
+  },
+  "instructor": { "archivo": "NormalCar1.glb" },
+  "personas": [
+    { "archivo": "Casual_Male.glb" },
+    { "archivo": "Casual_Female.glb", "altura": 1.64 },
+    { "archivo": "Casual2_Male.glb" },
+    { "archivo": "Casual2_Female.glb", "altura": 1.62 },
+    { "archivo": "Casual3_Male.glb" },
+    { "archivo": "Casual_Bald.glb" },
+    { "archivo": "Worker_Male.glb" },
+    { "archivo": "Worker_Female.glb", "altura": 1.63 },
+    { "archivo": "Suit_Male.glb" },
+    { "archivo": "Suit_Female.glb", "altura": 1.65 },
+    { "archivo": "OldClassy_Male.glb", "altura": 1.68 },
+    { "archivo": "OldClassy_Female.glb", "altura": 1.58 }
+  ]
+}

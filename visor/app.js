@@ -13,6 +13,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELOS, elegirModelo, colorModelo, partesPersona, PIEL, ROPA, PANTALON, PELO, geometriasPuestos, fusionar, caja } from './modelos.js';
 import { iniciarHitos, construirHito, dibujarPantallas } from './hitos.js';
+import { iniciarModelos3D } from './modelos3d.js';
 
 const $ = (id) => document.getElementById(id);
 const carga = (t) => { $('cargaTxt').textContent = t; };
@@ -629,7 +630,7 @@ for (const [clave, def] of Object.entries(MODELOS)) {
   const im = new THREE.InstancedMesh(geo, [def.metal ? matPinturaMetal : matPintura, matVidrio, matDetalle, matLuces], def.max);
   im.count = 0; im.frustumCulled = false; im.castShadow = true; im.receiveShadow = true;
   im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(def.max * 3).fill(1), 3);
-  scene.add(im); flota[clave] = { im, def, L: m.L, W: m.W, n: 0 };
+  scene.add(im); flota[clave] = { mallas: [{ im, tinte: true }], def, L: m.L, W: m.W, n: 0 };
 }
 // vehículo instructor: Porsche 911 GT color cherry blossom
 const COLOR_EGO = new THREE.Color('#f4a3bf');
@@ -670,7 +671,9 @@ const persona = Object.fromEntries(['torso', 'piernaI', 'piernaD', 'brazoI', 'br
 }));
 const posPrevPersona = new Map();
 const PM = new THREE.Matrix4(), PB = new THREE.Matrix4(), PT = new THREE.Matrix4(), PR = new THREE.Matrix4(), PQ = new THREE.Quaternion(), PV = new THREE.Vector3(), PC = new THREE.Color();
+let personas3D = null;  // modelos .glb de personas (modelos3d.js); null = figuras procedurales
 function ponerPersona(i, x, y, angGrados, semilla, paso, t) {
+  if (personas3D) { personas3D.poner(x, y, angGrados, semilla, paso, t); return; }
   PQ.setFromAxisAngle(EJE_Y, -angGrados * Math.PI / 180); PV.set(x, 0.16, -y); PB.compose(PV, PQ, UNO);
   const giro = paso ? Math.sin(t * 7.5 + semilla) * 0.55 : 0;
   persona.torso.setMatrixAt(i, PB); persona.cabeza.setMatrixAt(i, PB); persona.pelo.setMatrixAt(i, PB);
@@ -682,7 +685,7 @@ function ponerPersona(i, x, y, angGrados, semilla, paso, t) {
   persona.piernaI.setColorAt(i, PC.setHex(PANTALON[(r >> 2) % PANTALON.length])); persona.piernaD.setColorAt(i, PC);
   persona.cabeza.setColorAt(i, PC.setHex(PIEL[(r >> 4) % PIEL.length])); persona.pelo.setColorAt(i, PC.setHex(PELO[(r >> 3) % PELO.length]));
 }
-function cerrarPersonas(n) { for (const im of Object.values(persona)) { im.count = n; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; } }
+function cerrarPersonas(n) { if (personas3D) { personas3D.cerrar(); return; } for (const im of Object.values(persona)) { im.count = n; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; } }
 // figura no instanciada (para imprevistos: peatón imprudente, vendedor de semáforo)
 function figuraPersona(semilla, extra = []) {
   const r = semilla; const recolor = (g, c) => { const n = g.clone(); const col = n.attributes.color; const cc = new THREE.Color(c);
@@ -698,6 +701,15 @@ const FIGURAS = {
   perro: () => fusionar([caja(0.32, 0.4, 0.9, 0, 0.45, 0.45, 0x8a5a2b), caja(0.28, 0.3, 0.32, 0, 0.72, -0.05, 0x7a4a20), caja(0.08, 0.32, 0.08, 0.1, 0.16, 0.15, 0x6b3f1a), caja(0.08, 0.32, 0.08, -0.1, 0.16, 0.75, 0x6b3f1a), caja(0.08, 0.32, 0.08, -0.1, 0.16, 0.15, 0x6b3f1a), caja(0.08, 0.32, 0.08, 0.1, 0.16, 0.75, 0x6b3f1a)]),
   iguana: () => fusionar([caja(0.22, 0.14, 0.7, 0, 0.08, 0.35, 0x3fae49), caja(0.12, 0.08, 0.9, 0, 0.05, 1.1, 0x2f8a37), caja(0.16, 0.12, 0.18, 0, 0.1, -0.05, 0x56c35f)]),
 };
+// modelos 3D externos (visor/modelos3d/config.json); si no hay, se quedan las figuras
+iniciarModelos3D({ scene, flota, egoMalla, colorEgo: COLOR_EGO, maxPersonas: MAXP,
+  ocultarPersonasProcedurales: () => { for (const im of Object.values(persona)) { im.count = 0; im.visible = false; } } })
+  .then((p) => { personas3D = p;
+    if (p && p.geometriaFigura(6)) {  // el peatón imprudente y el vendedor también usan los modelos
+      const base = { peaton: FIGURAS.peaton, vendedor: FIGURAS.vendedor };
+      FIGURAS.peaton = () => p.geometriaFigura(6, true) || base.peaton();
+      FIGURAS.vendedor = () => p.geometriaFigura(3, false, [caja(0.5, 0.36, 0.34, 0, 0.95, -0.32, 0xf4f4f4), caja(0.52, 0.06, 0.36, 0, 1.15, -0.32, 0x1f6fd1)]) || base.vendedor();
+    } }).catch((e) => console.error('[modelos3d]', e));
 const matFigura = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
 const objetos = new Map();
 function figuraConos() { const g = new THREE.Group(); const cono = new THREE.ConeGeometry(0.28, 0.8, 12).translate(0, 0.4, 0);
@@ -813,10 +825,10 @@ function dibujar(tReal) {
     let info = infoVeh.get(id);
     if (!info) { const clave = elegirModelo(cod, id, estratoEn(x, y)); info = { clave, color: new THREE.Color(colorModelo(clave, id)) }; infoVeh.set(id, info); }
     const fl = flota[info.clave]; if (!fl || fl.n >= fl.def.max) continue;
-    M4.compose(V3, Q, UNO); fl.im.setMatrixAt(fl.n, M4); fl.im.setColorAt(fl.n, info.color); fl.n++;
+    M4.compose(V3, Q, UNO); for (const m of fl.mallas) { m.im.setMatrixAt(fl.n, M4); if (m.tinte) m.im.setColorAt(fl.n, info.color); } fl.n++;
     if (haces.visible && nh < 1500) { ESCALA_HAZ.set(fl.W * 2.4, 1, 14); M4.compose(V3.setY(0.11), Q, ESCALA_HAZ); haces.setMatrixAt(nh++, M4); }
   }
-  for (const fl of Object.values(flota)) { fl.im.count = fl.n; fl.im.instanceMatrix.needsUpdate = true; fl.im.instanceColor.needsUpdate = true; }
+  for (const fl of Object.values(flota)) for (const m of fl.mallas) { m.im.count = fl.n; m.im.instanceMatrix.needsUpdate = true; if (m.tinte) m.im.instanceColor.needsUpdate = true; }
   if (haces.visible) { ESCALA_HAZ.set(4.5, 1, 22); M4.compose(V3.copy(egoPos).setY(0.11), egoMalla.quaternion, ESCALA_HAZ); haces.setMatrixAt(nh++, M4); }
   haces.count = nh; haces.instanceMatrix.needsUpdate = true;
   // personas que caminan (SUMO) y gente quieta en puestos y plazas

@@ -1,0 +1,17 @@
+{
+  "vehiculos": {
+    "sedan":     { "archivo": "sedan.glb" },
+    "sedanLujo": { "archivo": "sedan.glb", "largo": 4.9 },
+    "hatch":     { "archivo": "compacto.glb" },
+    "taxi":      { "archivo": "compacto.glb", "largo": 3.75 },
+    "suv":       { "archivo": "camioneta.glb" },
+    "bus":       { "archivo": "buseta.glb" },
+    "camion":    { "archivo": "camion.glb", "pintura": ["cabina"] },
+    "moto":      { "archivo": "moto.glb", "pintura": false }
+  },
+  "instructor": { "archivo": "instructor.glb" },
+  "personas": [
+    { "archivo": "hombre.glb", "altura": 1.75 },
+    { "archivo": "mujer.glb", "altura": 1.62 }
+  ]
+}
