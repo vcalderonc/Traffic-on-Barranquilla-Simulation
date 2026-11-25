@@ -45,6 +45,7 @@ Detalle, figuras e intervalos de confianza en [docs/EXPERIMENTOS.md](docs/EXPERI
 | E5 · Flota federada en 3 zonas | El modelo FedAvg **no choca en ninguna zona** (0/18) y supera a los modelos locales, que fallan fuera de su zona; la nube rechazó un aporte dañino del bus |
 | E6 · Reglas vs. DQN vs. híbrido | Seguridad estadísticamente equivalente: el aprendizaje alcanza a las reglas pero no las supera; su valor está en la transferencia |
 | E7 · Red ampliada y más tráfico | El instructor se transfiere a vías y horas que no vio: 1 choque en 12 episodios, igual que las reglas, y más rápido (32 vs 28 km/h) |
+| E8 · Peatones y animales que se meten en la vía | Reentrenado (D-36): atropellos sin guardrail de 4 a 2 en 40 episodios y más rápido (24.6 vs 22.1 km/h); con guardrail, 0 choques y 0 carros encima de personas en los 5 recorridos del visor |
 
 > **Limitación encontrada (D-26):** en E1–E7 los viajes de fondo solo se generaban hasta
 > t = 4 000 s y los episodios se encadenan en la misma corrida de SUMO, así que después de

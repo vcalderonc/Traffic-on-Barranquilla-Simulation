@@ -193,6 +193,42 @@ con una iguana** (los animales pequeños se detectan tarde con lluvia y en esa z
 más); uno se conserva como `recorrido_6_via40_lluvia_choque_iguana.json`, ejemplo
 documentado de una falla.
 
+### E8 · No atropellar al peatón o animal que se mete en la vía (D-35, D-36)
+
+**Pregunta:** ¿aprende el instructor a no acelerar ni atropellar cuando un peatón, perro o
+iguana se mete en la vía, ahora que su posición es la misma en SUMO, la percepción y el visor?
+
+**Diseño:** el instructor anterior (28 entradas) se amplía a 31 con ceros y se entrena
+300 episodios con más peatones (×2), animales (×2.5) y vendedores (×1.5), más noche y
+lluvia, sin guardrail. Son 6 semillas en paralelo y en cada una se guarda el mejor punto
+de control (evaluación de 8 episodios cada 50). La validación son 40 episodios por
+candidato en el mismo mundo (semilla 4242), sin guardrail.
+`python -m bq_sim fase2 entrenar | validar | elegir`, ~42 min en 8 núcleos (`docs/EC2.md`).
+
+| Modelo (40 episodios, sin guardrail) | Atropellos | Choques | Casi-atropellos / ep. | Acelera ante un conflicto / ep. | km/h |
+|---|---|---|---|---|---|
+| Instructor anterior | 4 | 6 | 0.17 | 2.52 | 22.1 |
+| **s2 (instalado)** | **2** | **2** | **0.07** | 1.52 | 24.6 |
+| s6 | 2 | 3 | 0.07 | **0.82** | 24.0 |
+| s3 | 3 | 3 | 0.07 | 1.43 | **25.6** |
+| s4 | 3 | 6 | 0.10 | 1.52 | 24.7 |
+| s1 | 4 | 6 | 0.23 | 1.88 | 22.8 |
+| s5 (su mejor punto = sin entrenar) | 4 | 6 | 0.17 | 2.52 | 22.1 |
+
+**Resultado:** el mejor candidato reduce los atropellos a la mitad y los choques a un
+tercio, y va más rápido. Todos aceleran menos ante un conflicto. Ninguno llega a cero
+sin el guardrail, y con 40 episodios la diferencia de 2 frente a 4 atropellos no es
+estadísticamente concluyente. s5 salió idéntico al anterior: confirma que ampliar la
+red con ceros no cambia la conducción. En 4 de 6 semillas el mejor punto fue el del
+episodio 100, señal de inestabilidad o de una selección ruidosa (8 episodios).
+
+**Con guardrail** (instalado s2 + separación lateral de D-36, recorridos 1–5 del visor):
+0 choques, 0 solapes del ego con personas, 18–37 km/h de velocidad media
+(`salidas/fase2/solapes_visor/`).
+
+**Siguiente paso:** castigo por acelerar ante un conflicto de −1 (hoy −0.3), tasa de
+aprendizaje más baja, selección con 20 episodios y 15–30 semillas (EC2).
+
 ## Conclusiones
 
 1. **La arquitectura multiagente funciona y es explicable.** Seis agentes y un

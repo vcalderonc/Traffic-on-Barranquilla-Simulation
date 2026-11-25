@@ -19,7 +19,10 @@ class Metricas:
     tiempo_s: float = 0.0
     choques: int = 0
     choque_con: str = ""
+    choques_vulnerables: int = 0
     casi_choques: int = 0
+    casi_choques_vulnerables: int = 0
+    pasos_acelerando_ante_conflicto: int = 0
     pare_violados: int = 0
     pare_respetados: int = 0
     rojos_violados: int = 0
@@ -39,6 +42,13 @@ class Metricas:
         d["recompensa"] = round(self.recompensa, 3)
         d["distancia_m"] = round(self.distancia_m, 1)
         return d
+
+
+def es_vulnerable(oid: str, verdad: dict) -> bool:
+    """¿El objeto es un peatón o un animal? (imprevisto ``obs_*`` o persona de SUMO)."""
+    if oid in verdad:
+        return verdad[oid].clase in ("peaton", "animal")
+    return oid.startswith(("obs_peaton", "obs_vendedor", "obs_perro", "obs_iguana"))
 
 
 class Evaluador:
@@ -64,11 +74,16 @@ class Evaluador:
         v_lim = max(mm_antes.v_lim, 1.0)
         rec += r.progreso * min(v / v_lim, 1.0)
         terminado = False
+        verdad = {o.id: o for o in (mm_antes.verdad + (mm_despues.verdad if mm_despues is not None else []))}
         # choques (vehículos, fantasmas y peatones de SUMO)
         if colisiones:
             m.choques += 1
             m.choque_con = colisiones[0]
-            rec += r.choque
+            if es_vulnerable(colisiones[0], verdad):
+                m.choques_vulnerables += 1
+                rec += r.choque_vulnerable
+            else:
+                rec += r.choque
             terminado = True
             m.eventos.append({"t": round(mundo.t, 2), "tipo": "choque", "con": colisiones[0]})
         # casi-choques: TTC real < 1 s con algo en la trayectoria
@@ -80,7 +95,11 @@ class Evaluador:
                 if o.ttc < 1.0 and o.id not in self._casi_contados and not terminado:
                     self._casi_contados.add(o.id)
                     m.casi_choques += 1
-                    rec += r.casi_choque
+                    if o.clase in ("peaton", "animal"):
+                        m.casi_choques_vulnerables += 1
+                        rec += r.casi_choque_vulnerable
+                    else:
+                        rec += r.casi_choque
                     m.eventos.append({"t": round(mundo.t, 2), "tipo": "casi_choque", "con": o.subtipo,
                                       "ttc": round(o.ttc, 2)})
         # señales: ¿cruzó un PARE sin detenerse o un semáforo en rojo?
@@ -103,6 +122,10 @@ class Evaluador:
                     m.rojos_violados += 1
                     rec += r.semaforo_rojo
                     m.eventos.append({"t": round(mundo.t, 2), "tipo": "semaforo_rojo"})
+        # acelerar mientras un peatón o animal se mete en la vía (verdad del simulador)
+        if decision.acel > 0.2 and any(o.conflicto for o in mm_antes.verdad):
+            m.pasos_acelerando_ante_conflicto += 1
+            rec += r.acelerar_ante_conflicto
         # confort y normas
         if decision.acel < -0.5 * self.b_max:
             rec += r.frenada_brusca

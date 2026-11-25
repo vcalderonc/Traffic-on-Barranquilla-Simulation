@@ -1,6 +1,8 @@
 """Agente de Velocidad: el único que aprende (Double DQN).
 
-Observación (28 valores, todos normalizados y SIN unidades del vehículo):
+Observación (31 valores, todos normalizados y SIN unidades del vehículo; los 3 últimos,
+del peatón o animal que se mete en la vía, se agregaron en D-36 y los modelos de 28
+entradas los ignoran):
 las distancias se expresan como tiempo para colisión o como la fracción de la
 capacidad de frenado propia que haría falta. Por eso el mismo conocimiento sirve
 para un automóvil y para un bus (idea de normalización de la propuesta original).
@@ -20,7 +22,7 @@ from .percepcion import ModeloMundo, Objeto
 
 CLASES = ("vehiculo", "peaton", "animal", "obra")
 ESTADOS_SENAL = ("verde", "amarillo", "rojo", "pare")
-N_OBS = 28
+N_OBS = 31
 N_ACC = len(ACCIONES)
 NOMBRES_OBS = (
     "v/v_lim", "v/20", "a_prev/b_max", "v_lim/20",
@@ -31,6 +33,7 @@ NOMBRES_OBS = (
     "dist_senal/120", "senal_verde", "senal_amarillo", "senal_rojo", "senal_pare", "decel_req_senal/b_max",
     "decel_req_limite/b_max", "mu/0.8", "alcance/90", "carril_bloqueado",
     "sugerencia_obstaculos",
+    "conflicto_vulnerable", "t_entra_vulnerable/4", "decel_req_vulnerable/b_max",
 )
 
 
@@ -40,7 +43,8 @@ def riesgo_ttc(ttc: float) -> float:
 
 def construir_observacion(mm: ModeloMundo, amenazas: list[Objeto], vulnerables: list[Objeto],
                           perfil: PerfilVehiculo, perfil_ref: PerfilVehiculo | None = None,
-                          carril_bloqueado: bool = False, sugerencia: float | None = None) -> np.ndarray:
+                          carril_bloqueado: bool = False, sugerencia: float | None = None,
+                          conflictos: list[Objeto] | None = None) -> np.ndarray:
     """``perfil_ref`` distinto de ``perfil`` = conocimiento copiado sin normalizar
     (las magnitudes se expresan con la capacidad de frenado de OTRO vehículo)."""
     ref = perfil_ref or perfil
@@ -88,6 +92,13 @@ def construir_observacion(mm: ModeloMundo, amenazas: list[Objeto], vulnerables: 
     # lo que sugiere el agente de Obstáculos (modelo de seguimiento tipo IDM), normalizado
     if sugerencia is not None:
         o[27] = np.clip(sugerencia / (b_ref if sugerencia < 0 else ref.acel_max), -1.5, 1.0)
+    # peatón o animal que entrará a la trayectoria antes de que el ego pase (D-36)
+    o[29] = 1.0
+    if conflictos:
+        c = conflictos[0]
+        o[28] = 1.0
+        o[29] = min(c.t_entra, 4.0) / 4.0
+        o[30] = min(2.0, decel_para_detenerse(v, c.s - MARGEN_CLASE[c.clase]) / b_ref)
     return o
 
 

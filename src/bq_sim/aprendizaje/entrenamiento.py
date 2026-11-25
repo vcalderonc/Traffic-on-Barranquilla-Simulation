@@ -9,7 +9,8 @@ from .dqn import AgenteDQN
 from .instructor import InstructorDobleComando
 
 COLUMNAS = ["episodio", "fase", "zona", "clima", "perfil", "ruta", "largo_ruta_m", "pasos", "tiempo_s",
-            "distancia_m", "vel_media_kmh", "choques", "choque_con", "casi_choques", "pare_violados",
+            "distancia_m", "vel_media_kmh", "choques", "choque_con", "choques_vulnerables", "casi_choques",
+            "casi_choques_vulnerables", "pasos_acelerando_ante_conflicto", "pare_violados",
             "pare_respetados", "rojos_violados", "frenadas_bruscas", "pasos_exceso_vel",
             "intervenciones_seguridad", "intervenciones_instructor", "llego", "ttc_min", "recompensa",
             "epsilon", "perdida", "lambda_imitacion", "segundos_reloj"]

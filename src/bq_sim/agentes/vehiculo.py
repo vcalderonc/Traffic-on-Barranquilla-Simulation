@@ -104,7 +104,8 @@ class VehiculoAutonomo:
         # "carril bloqueado" (entrada de la red DQN) solo cuenta para esquivar, no para adelantar
         bloqueado = (p_nav.carril is not None and p_nav.datos.get("tipo") == "esquivar") or "bloquea" in p_nav.motivo
         obs = construir_observacion(mm, p_obs.datos["amenazas"], p_obs.datos["vulnerables"],
-                                    self.perfil, self.perfil_ref, bloqueado, p_obs.acel)
+                                    self.perfil, self.perfil_ref, bloqueado, p_obs.acel,
+                                    p_obs.datos["conflictos"])
         self.mm, self.obs = mm, obs
         self._p_obs, self._p_nav = p_obs, p_nav
         return obs
@@ -138,7 +139,7 @@ class VehiculoAutonomo:
         ejecutada = accion_mas_cercana(a, self.perfil, mm.clima.mu)
         # demostración del conductor de reglas: IDM de Obstáculos, cotas de Señales y veto de Seguridad
         b_max = self.perfil.frenado_max(mm.clima.mu)
-        a_regla = -b_max if self.seguridad.veto_teorico else min(p_obs.acel, p_sen.acel_max)
+        a_regla = min(p_obs.acel, p_sen.acel_max, self.seguridad.acel_teorica)
         regla = accion_mas_cercana(max(-b_max, min(self.perfil.acel_max, a_regla)), self.perfil, mm.clima.mu)
         return Decision(a, carril, dominante, motivo, accion_politica, ejecutada, intervencion,
                         {"senales": p_sen.motivo, "obstaculos": p_obs.motivo, "navegacion": p_nav.motivo,

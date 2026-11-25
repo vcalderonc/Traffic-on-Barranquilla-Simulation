@@ -55,6 +55,10 @@ class Objeto:
     confianza: float = 1.0
     x: float = 0.0
     y: float = 0.0
+    # peatones y animales (D-36): ¿se está metiendo en el camino del ego?
+    v_lat: float = 0.0        # velocidad con que se acerca a la trayectoria (m/s, >0 se acerca)
+    t_entra: float = float("inf")  # segundos hasta entrar al corredor del ego
+    conflicto: bool = False   # entraría al corredor antes de que el ego pase (con margen)
 
     @property
     def ttc(self) -> float:
@@ -104,6 +108,7 @@ class AgentePercepcion:
         self.rng = random.Random(semilla)
         self.ruido_activo = ruido_activo
         self.memoria: dict[str, tuple[Objeto, float]] = {}
+        self._lat_prev: dict[str, tuple[float, float, float]] = {}  # id -> (t, |lateral|, v_lat)
         self._confusion: dict[str, bool] = {}
         tc = mundo.tc
         mundo.traci.vehicle.subscribeContext(
@@ -117,6 +122,7 @@ class AgentePercepcion:
         out: list[Objeto] = []
         self.traseros = []  # radar trasero: vehículos que vienen detrás (para cambiar de carril)
         ctx = tr.vehicle.getContextSubscriptionResults(self.ego) or {}
+        continuas = getattr(self.m, "posiciones_eventos", {})
         for vid, var in ctx.items():
             if vid == self.ego:
                 continue
@@ -125,6 +131,15 @@ class AgentePercepcion:
             largo, ancho = var[tc.VAR_LENGTH], var[tc.VAR_WIDTH]
             hx, hy = math.sin(ang), math.cos(ang)  # SUMO: 0 = norte, horario
             clase, sub = clase_de_tipo(var[tc.VAR_TYPE])
+            if vid in continuas and sub != "conos":
+                # peatón, animal o vendedor que cruza: SUMO solo sabe en qué carril está; la
+                # posición real es la continua del gestor de eventos (D-35)
+                x, y, _ = continuas[vid]
+                s, lateral, _ = proyectar(camino.poli, x, y)
+                s -= largo / 2
+                if -3.0 <= s <= 120.0:
+                    out.append(self._clasificar(vid, clase, sub, s, lateral, v_ego, ancho, x, y, v_ego))
+                continue
             s1, lat1, rumbo = proyectar(camino.poli, x, y)
             s2, lat2, _ = proyectar(camino.poli, x - largo * hx, y - largo * hy)
             s = min(s1, s2)
@@ -150,14 +165,42 @@ class AgentePercepcion:
                 continue
             ang = math.radians(tr.person.getAngle(pid))
             v_obj = tr.person.getSpeed(pid) * (math.sin(ang) * math.cos(rumbo) + math.cos(ang) * math.sin(rumbo))
-            out.append(self._clasificar(pid, "peaton", "peaton", s, lateral, v_ego - v_obj, 0.6, x, y))
+            out.append(self._clasificar(pid, "peaton", "peaton", s, lateral, v_ego - v_obj, 0.6, x, y, v_ego))
+        vistos = {o.id for o in out}
+        for oid in [k for k in self._lat_prev if k not in vistos]:
+            del self._lat_prev[oid]
         return out
 
-    def _clasificar(self, oid, clase, sub, s, lateral, v_rel, ancho, x, y) -> Objeto:
+    def _clasificar(self, oid, clase, sub, s, lateral, v_rel, ancho, x, y, v_ego: float | None = None) -> Objeto:
         umbral = self.ancho_ego / 2 + ancho / 2 + 0.25
         en_tray = abs(lateral) < umbral and s > -1.0
         cerca = (clase in ("peaton", "animal")) and abs(lateral) < umbral + 4.0 and 0 < s < 50
-        return Objeto(oid, clase, sub, s, lateral, v_rel, ancho, en_tray, cerca, 1.0, x, y)
+        o = Objeto(oid, clase, sub, s, lateral, v_rel, ancho, en_tray, cerca, 1.0, x, y)
+        if clase in ("peaton", "animal") and v_ego is not None:
+            self._predecir_cruce(o, umbral, v_ego)
+        return o
+
+    def _predecir_cruce(self, o: Objeto, umbral: float, v_ego: float) -> None:
+        """Velocidad lateral (diferencias suavizadas) y conflicto con la trayectoria (D-36).
+
+        Conflicto: el peatón o animal entraría al corredor del ego (ancho propio + el suyo +
+        0.25 m) antes de que el ego llegue a su altura, con 1.5 s de margen. Uno que ya está
+        en la trayectoria es una amenaza normal, no un conflicto."""
+        t = self.m.t
+        lat = abs(o.lateral)
+        prev = self._lat_prev.get(o.id)
+        v_lat = 0.0
+        if prev is not None and t > prev[0]:
+            crudo = (prev[1] - lat) / (t - prev[0])
+            v_lat = 0.5 * prev[2] + 0.5 * crudo
+        self._lat_prev[o.id] = (t, lat, v_lat)
+        o.v_lat = v_lat
+        if o.en_trayectoria or o.s < -1.0 or o.s > 60.0:
+            return
+        if v_lat > 0.15:
+            o.t_entra = max(0.0, lat - umbral) / v_lat
+            t_ego = max(0.0, o.s) / max(v_ego, 0.5)
+            o.conflicto = o.t_entra < t_ego + 1.5
 
     # ------------------------------------------------------- sensor
     def _sensar(self, reales: list[Objeto], t: float) -> list[Objeto]:
@@ -184,7 +227,8 @@ class AgentePercepcion:
             vistos.append(Objeto(o.id, clase, sub, o.s + self.rng.gauss(0, sigma_s),
                                  o.lateral + self.rng.gauss(0, 0.1 * k_ruido),
                                  o.v_rel + self.rng.gauss(0, sigma_v), o.ancho,
-                                 o.en_trayectoria, o.cerca_via, round(p, 2), o.x, o.y))
+                                 o.en_trayectoria, o.cerca_via, round(p, 2), o.x, o.y,
+                                 o.v_lat + self.rng.gauss(0, 0.1 * k_ruido), o.t_entra, o.conflicto))
         # rastreador: sostiene lo visto hace poco
         ids = {o.id for o in vistos}
         for oid, (prev, t_prev) in list(self.memoria.items()):
@@ -194,7 +238,8 @@ class AgentePercepcion:
             if dt <= 0.75:
                 vistos.append(Objeto(prev.id, prev.clase, prev.subtipo, prev.s - prev.v_rel * dt,
                                      prev.lateral, prev.v_rel, prev.ancho, prev.en_trayectoria,
-                                     prev.cerca_via, prev.confianza * 0.6, prev.x, prev.y))
+                                     prev.cerca_via, prev.confianza * 0.6, prev.x, prev.y,
+                                     prev.v_lat, max(0.0, prev.t_entra - dt), prev.conflicto))
             else:
                 del self.memoria[oid]
         for o in vistos:

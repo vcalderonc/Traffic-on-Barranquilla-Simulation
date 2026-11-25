@@ -1,0 +1,38 @@
+Warning: Could not set locale to 'C'.
+[s1] antes de entrenar: {'episodios': 8, 'choques': 3, 'choques_vulnerables': 3, 'casi_vulnerables_por_ep': 0.25, 'acelera_ante_conflicto_por_ep': 2.5, 'frenadas_bruscas_por_ep': 5.25, 'vel_media_kmh': 33.09, 'recompensa': -41.22, 'tras_episodios': 0}
+[s1] ep   10 | atropellos 2/10 | choques 2/10 | casi-atr 0.10 | v 34.7 km/h | eps 0.14 | 58s
+[s1] ep   20 | atropellos 0/10 | choques 0/10 | casi-atr 0.10 | v 22.2 km/h | eps 0.12 | 70s
+[s1] ep   30 | atropellos 1/10 | choques 1/10 | casi-atr 0.30 | v 25.8 km/h | eps 0.10 | 70s
+[s1] ep   40 | atropellos 0/10 | choques 1/10 | casi-atr 0.00 | v 19.4 km/h | eps 0.08 | 67s
+[s1] ep   50 | atropellos 1/10 | choques 2/10 | casi-atr 0.10 | v 23.0 km/h | eps 0.07 | 74s
+[s1] evaluación tras 50: {'episodios': 8, 'choques': 0, 'choques_vulnerables': 0, 'casi_vulnerables_por_ep': 0.625, 'acelera_ante_conflicto_por_ep': 3.62, 'frenadas_bruscas_por_ep': 11.25, 'vel_media_kmh': 23.85, 'recompensa': -8.17, 'tras_episodios': 50}
+[s1] ep   60 | atropellos 2/10 | choques 2/10 | casi-atr 0.10 | v 27.8 km/h | eps 0.05 | 69s
+[s1] ep   70 | atropellos 2/10 | choques 2/10 | casi-atr 0.20 | v 23.8 km/h | eps 0.04 | 75s
+[s1] ep   80 | atropellos 0/10 | choques 0/10 | casi-atr 0.20 | v 28.1 km/h | eps 0.02 | 85s
+[s1] ep   90 | atropellos 3/10 | choques 3/10 | casi-atr 0.20 | v 32.0 km/h | eps 0.02 | 65s
+[s1] ep  100 | atropellos 0/10 | choques 0/10 | casi-atr 0.10 | v 29.4 km/h | eps 0.02 | 74s
+[s1] evaluación tras 100: {'episodios': 8, 'choques': 0, 'choques_vulnerables': 0, 'casi_vulnerables_por_ep': 0.0, 'acelera_ante_conflicto_por_ep': 3.0, 'frenadas_bruscas_por_ep': 8.0, 'vel_media_kmh': 26.44, 'recompensa': 30.11, 'tras_episodios': 100}
+[s1] ep  110 | atropellos 2/10 | choques 3/10 | casi-atr 0.10 | v 22.7 km/h | eps 0.02 | 61s
+[s1] ep  120 | atropellos 1/10 | choques 2/10 | casi-atr 0.10 | v 27.4 km/h | eps 0.02 | 69s
+[s1] ep  130 | atropellos 0/10 | choques 1/10 | casi-atr 0.20 | v 24.6 km/h | eps 0.02 | 87s
+[s1] ep  140 | atropellos 1/10 | choques 1/10 | casi-atr 0.20 | v 24.6 km/h | eps 0.02 | 68s
+[s1] ep  150 | atropellos 1/10 | choques 1/10 | casi-atr 0.10 | v 22.6 km/h | eps 0.02 | 87s
+[s1] evaluación tras 150: {'episodios': 8, 'choques': 0, 'choques_vulnerables': 0, 'casi_vulnerables_por_ep': 0.125, 'acelera_ante_conflicto_por_ep': 2.88, 'frenadas_bruscas_por_ep': 6.38, 'vel_media_kmh': 26.73, 'recompensa': 30.72, 'tras_episodios': 150}
+[s1] ep  160 | atropellos 1/10 | choques 1/10 | casi-atr 0.10 | v 23.8 km/h | eps 0.02 | 86s
+[s1] ep  170 | atropellos 1/10 | choques 1/10 | casi-atr 0.10 | v 30.4 km/h | eps 0.02 | 75s
+[s1] ep  180 | atropellos 2/10 | choques 2/10 | casi-atr 0.20 | v 22.7 km/h | eps 0.02 | 71s
+[s1] ep  190 | atropellos 2/10 | choques 2/10 | casi-atr 0.20 | v 26.8 km/h | eps 0.02 | 73s
+[s1] ep  200 | atropellos 0/10 | choques 2/10 | casi-atr 0.20 | v 28.8 km/h | eps 0.02 | 75s
+[s1] evaluación tras 200: {'episodios': 8, 'choques': 0, 'choques_vulnerables': 0, 'casi_vulnerables_por_ep': 0.125, 'acelera_ante_conflicto_por_ep': 5.38, 'frenadas_bruscas_por_ep': 10.12, 'vel_media_kmh': 31.68, 'recompensa': 31.24, 'tras_episodios': 200}
+[s1] ep  210 | atropellos 0/10 | choques 1/10 | casi-atr 0.00 | v 29.3 km/h | eps 0.02 | 64s
+[s1] ep  220 | atropellos 1/10 | choques 2/10 | casi-atr 0.10 | v 24.6 km/h | eps 0.02 | 66s
+[s1] ep  230 | atropellos 0/10 | choques 0/10 | casi-atr 0.00 | v 25.1 km/h | eps 0.02 | 83s
+[s1] ep  240 | atropellos 0/10 | choques 0/10 | casi-atr 0.20 | v 30.3 km/h | eps 0.02 | 78s
+[s1] ep  250 | atropellos 0/10 | choques 0/10 | casi-atr 0.20 | v 28.8 km/h | eps 0.02 | 80s
+[s1] evaluación tras 250: {'episodios': 8, 'choques': 0, 'choques_vulnerables': 0, 'casi_vulnerables_por_ep': 0.125, 'acelera_ante_conflicto_por_ep': 1.75, 'frenadas_bruscas_por_ep': 9.5, 'vel_media_kmh': 25.79, 'recompensa': 34.8, 'tras_episodios': 250}
+[s1] ep  260 | atropellos 0/10 | choques 0/10 | casi-atr 0.10 | v 29.9 km/h | eps 0.02 | 86s
+[s1] ep  270 | atropellos 0/10 | choques 1/10 | casi-atr 0.00 | v 25.4 km/h | eps 0.02 | 84s
+[s1] ep  280 | atropellos 1/10 | choques 1/10 | casi-atr 0.10 | v 29.2 km/h | eps 0.02 | 80s
+[s1] ep  290 | atropellos 0/10 | choques 0/10 | casi-atr 0.30 | v 21.7 km/h | eps 0.02 | 73s
+[s1] ep  300 | atropellos 1/10 | choques 2/10 | casi-atr 0.10 | v 25.0 km/h | eps 0.02 | 36s
+[s1] evaluación tras 300: {'episodios': 8, 'choques': 1, 'choques_vulnerables': 1, 'casi_vulnerables_por_ep': 0.125, 'acelera_ante_conflicto_por_ep': 0.75, 'frenadas_bruscas_por_ep': 9.38, 'vel_media_kmh': 24.92, 'recompensa': 9.36, 'tras_episodios': 300}

@@ -1,0 +1,92 @@
+[
+ {
+  "recorrido": "recorrido_1_malecon_atardecer",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 0,
+  "fondo_persona": 2,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 12
+ },
+ {
+  "recorrido": "recorrido_1_malecon_atardecer",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 0,
+  "fondo_persona": 2,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 12
+ },
+ {
+  "recorrido": "recorrido_2_malecon_dia",
+  "huella": "sumo",
+  "choques_registrados": 0,
+  "ego_persona": 0,
+  "fondo_persona": 1,
+  "ego_vehiculo": 1,
+  "fondo_vehiculo": 26
+ },
+ {
+  "recorrido": "recorrido_2_malecon_dia",
+  "huella": "visual",
+  "choques_registrados": 0,
+  "ego_persona": 0,
+  "fondo_persona": 1,
+  "ego_vehiculo": 1,
+  "fondo_vehiculo": 26
+ },
+ {
+  "recorrido": "recorrido_3_calle84_lluvia",
+  "huella": "sumo",
+  "choques_registrados": 1,
+  "ego_persona": 0,
+  "fondo_persona": 0,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_3_calle84_lluvia",
+  "huella": "visual",
+  "choques_registrados": 1,
+  "ego_persona": 0,
+  "fondo_persona": 0,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_4_malecon_noche",
+  "huella": "sumo",
+  "choques_registrados": 1,
+  "ego_persona": 1,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_4_malecon_noche",
+  "huella": "visual",
+  "choques_registrados": 1,
+  "ego_persona": 1,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_5_buenavista_noche",
+  "huella": "sumo",
+  "choques_registrados": 1,
+  "ego_persona": 0,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ },
+ {
+  "recorrido": "recorrido_5_buenavista_noche",
+  "huella": "visual",
+  "choques_registrados": 1,
+  "ego_persona": 0,
+  "fondo_persona": 1,
+  "ego_vehiculo": 0,
+  "fondo_vehiculo": 0
+ }
+]
