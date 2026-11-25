@@ -26,5 +26,5 @@ sudo -u ubuntu -H bash -c '
 echo "$(date) | entrenando"
 sudo -u ubuntu -H env \
   SEMILLAS=${semillas} SEMILLA_INICIAL=${semilla_inicial} EPISODIOS=${episodios} \
-  EVALUAR_CADA=${evaluar_cada} EPISODIOS_EVAL=${episodios_eval} AJUSTES="${ajustes}" VALIDAR=${validar} INSTALAR=1 APAGAR=0 BUCKET="$BUCKET" \
+  EVALUAR_CADA=${evaluar_cada} EPISODIOS_EVAL=${episodios_eval} AJUSTES="${ajustes}" VALIDAR=${validar} INSTALAR=1 APAGAR=0 BUCKET="$BUCKET" METRICAS="${corrida}" \
   bash /home/ubuntu/Traffic-on-Barranquilla-Simulation/scripts/ec2/entrenar_fase2.sh

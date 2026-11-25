@@ -15,6 +15,7 @@
 #   INSTALAR         1 = copia el mejor a modelos/instructor_automovil.npz (0)
 #   BUCKET           ruta S3 donde subir modelos/fase2 y salidas/fase2 (cada 10 min y al terminar)
 #   APAGAR           1 = apaga la instancia al terminar (para no pagar horas sin uso)
+#   METRICAS         nombre de la corrida: publica el avance en CloudWatch (scripts/ec2/metricas.py)
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY=./.venv/bin/python
@@ -66,6 +67,10 @@ for s in $(seq "$SEMILLA_INICIAL" "$ULTIMA"); do
     --episodios-eval "$EPISODIOS_EVAL" ${ajuste[@]+"${ajuste[@]}"} > "salidas/fase2/log_s$s.txt" 2>&1 &
   pids+=($!)
 done
+METRICAS_PID=""
+if [ -n "${METRICAS:-}" ]; then
+  python3 scripts/ec2/metricas.py --corrida "$METRICAS" > salidas/fase2/log_metricas.txt 2>&1 & METRICAS_PID=$!
+fi
 # respaldo a S3 cada 10 minutos mientras entrena
 ( while sleep 600; do subir; done ) & RESPALDO=$!
 VIGIA=""
@@ -92,6 +97,7 @@ else
   $PY -m bq_sim fase2 elegir | tee salidas/fase2/eleccion.txt
 fi
 [ -n "$VIGIA" ] && kill "$VIGIA" 2>/dev/null
+[ -n "$METRICAS_PID" ] && sleep 70 && kill "$METRICAS_PID" 2>/dev/null  # un último envío
 subir
 echo "$(date) | listo"
 [ "${APAGAR:-0}" = "1" ] && sudo shutdown -h now

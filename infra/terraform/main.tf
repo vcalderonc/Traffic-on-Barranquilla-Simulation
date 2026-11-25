@@ -76,6 +76,24 @@ data "aws_iam_policy_document" "s3_resultados" {
   }
 }
 
+data "aws_iam_policy_document" "metricas" {
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"] # PutMetricData no admite ARN; se limita con la condición
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = ["BQSim/Entrenamiento"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "metricas" {
+  name   = "cloudwatch-metricas"
+  role   = aws_iam_role.entrenador.id
+  policy = data.aws_iam_policy_document.metricas.json
+}
+
 resource "aws_iam_role_policy" "s3_resultados" {
   name   = "s3-resultados"
   role   = aws_iam_role.entrenador.id
@@ -212,6 +230,7 @@ resource "aws_instance" "entrenador" {
   vpc_security_group_ids = [aws_security_group.entrenador.id]
   iam_instance_profile   = aws_iam_instance_profile.entrenador.name
   key_name               = var.llave_ssh
+  monitoring             = true # métricas de EC2 cada minuto (para el dashboard)
 
   instance_market_options {
     market_type = "spot"
@@ -247,6 +266,7 @@ resource "aws_instance" "entrenador" {
     ajustes         = join(" ", var.ajustes)
     validar         = var.episodios_validacion
     minutos_maximos = floor(var.horas_maximas * 60)
+    corrida         = var.corrida
   })
 
   tags = {
