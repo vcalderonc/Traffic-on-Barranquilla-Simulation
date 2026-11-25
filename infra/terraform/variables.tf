@@ -73,7 +73,19 @@ variable "episodios" {
 variable "evaluar_cada" {
   description = "Episodios entre evaluaciones (se guarda el mejor punto de control)."
   type        = number
-  default     = 50
+  default     = 25
+}
+
+variable "episodios_eval" {
+  description = "Episodios de cada evaluación intermedia (más = elección del punto de control menos ruidosa)."
+  type        = number
+  default     = 16
+}
+
+variable "ajustes" {
+  description = "Grupos \"delta_huber:lr\" repartidos entre las semillas (D-37). El primero es el control (ajuste de la primera corrida)."
+  type        = list(string)
+  default     = ["1:3e-4", "10:3e-4", "10:1e-4"]
 }
 
 variable "episodios_validacion" {

@@ -7,6 +7,10 @@
 #                    los candidatos que ya están en modelos/fase2 (s1..s6)
 #   EPISODIOS        episodios por semilla (300)
 #   EVALUAR_CADA     episodios entre evaluaciones (50)
+#   EPISODIOS_EVAL   episodios de cada evaluación intermedia (8)
+#   AJUSTES          grupos "delta_huber:lr" que se reparten entre las semillas, para
+#                    compararlos en la validación (D-37). Ej.: "1:3e-4 10:3e-4 10:1e-4".
+#                    Vacío = todas con los valores por defecto de fase2.py
 #   VALIDAR          episodios de validación por candidato (40)
 #   INSTALAR         1 = copia el mejor a modelos/instructor_automovil.npz (0)
 #   BUCKET           ruta S3 donde subir modelos/fase2 y salidas/fase2 (cada 10 min y al terminar)
@@ -20,10 +24,12 @@ SEMILLAS=${SEMILLAS:-$(( NUCLEOS > 1 ? NUCLEOS - 1 : 1 ))}
 SEMILLA_INICIAL=${SEMILLA_INICIAL:-1}
 EPISODIOS=${EPISODIOS:-300}
 EVALUAR_CADA=${EVALUAR_CADA:-50}
+EPISODIOS_EVAL=${EPISODIOS_EVAL:-8}
+read -r -a GRUPOS <<< "${AJUSTES:-}"
 VALIDAR=${VALIDAR:-40}
 mkdir -p salidas/fase2
 ULTIMA=$(( SEMILLA_INICIAL + SEMILLAS - 1 ))
-echo "$(date) | semillas $SEMILLA_INICIAL..$ULTIMA x $EPISODIOS episodios en $NUCLEOS núcleos"
+echo "$(date) | semillas $SEMILLA_INICIAL..$ULTIMA x $EPISODIOS episodios en $NUCLEOS núcleos (ajustes: ${AJUSTES:-por defecto})"
 
 subir() {
   if [ -n "${BUCKET:-}" ]; then
@@ -50,8 +56,14 @@ vigilar_spot() {
 
 pids=()
 for s in $(seq "$SEMILLA_INICIAL" "$ULTIMA"); do
+  ajuste=()
+  if [ "${#GRUPOS[@]}" -gt 0 ]; then
+    g=${GRUPOS[$(( (s - SEMILLA_INICIAL) % ${#GRUPOS[@]} ))]}
+    ajuste=(--huber-delta "${g%%:*}" --lr "${g##*:}")
+    echo "s$s delta=${g%%:*} lr=${g##*:}" >> salidas/fase2/grupos.txt
+  fi
   $PY -m bq_sim fase2 entrenar --semilla "$s" --episodios "$EPISODIOS" --evaluar-cada "$EVALUAR_CADA" \
-    > "salidas/fase2/log_s$s.txt" 2>&1 &
+    --episodios-eval "$EPISODIOS_EVAL" ${ajuste[@]+"${ajuste[@]}"} > "salidas/fase2/log_s$s.txt" 2>&1 &
   pids+=($!)
 done
 # respaldo a S3 cada 10 minutos mientras entrena
@@ -62,7 +74,7 @@ if [ -n "${BUCKET:-}" ] && curl -s -m 1 -o /dev/null http://169.254.169.254/; th
 fi
 fallos=0
 for p in "${pids[@]}"; do wait "$p" || fallos=$((fallos + 1)); done
-kill "$RESPALDO" 2>/dev/null
+kill "$RESPALDO" 2>/dev/null; wait "$RESPALDO" 2>/dev/null
 echo "$(date) | entrenamiento terminado ($fallos semillas con error)"
 subir
 

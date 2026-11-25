@@ -506,3 +506,23 @@ Sirve para la sustentación: si preguntan "¿por qué no X?", la respuesta está
   de fondo pasan sobre peatones de SUMO. Es un problema de la red (`red.py`), no de
   conducción. También quedan 0–4 roces breves del ego con otro carro en cruces y cebras,
   sin penetración medible, que vienen del manejo de cruces de SUMO.
+
+### D-37 · El atropello tiene que pesar en el gradiente (delta de Huber)
+
+* **Síntoma (entrenamiento local E8, semillas 1–6):** en 4 de 6 semillas el mejor punto de
+  control fue el de los 100 episodios; después la política se desvía: sube la velocidad
+  (25 → 31–35 km/h) y vuelven los atropellos (0 → 1–3 en la evaluación de 8 episodios).
+* **Causa medida:** tras 25 episodios de ajuste fino, el error TD de la memoria de
+  incidentes llega a ~57 (p95 = 53) y el 45 % de esas transiciones supera 1. La pérdida
+  Huber usaba delta = 1, así que en el lote un atropello pesaba lo mismo que un error de
+  1 punto: el castigo de −150 casi no movía la red frente a las transiciones normales.
+  Como Adam normaliza la escala del gradiente, lo que importa es ese peso **relativo**.
+* **Cambio:** `HiperDQN.huber_delta` (1.0 por defecto: los modelos y experimentos
+  anteriores no cambian); la Fase 2 usa 10. Con datos reales, 3 000 actualizaciones bajan
+  el error TD de los incidentes de 10.4 a 6.2 con delta = 10 (a 9.5 con delta = 1), a
+  cambio de un error algo mayor en las transiciones normales (1.43 frente a 1.15).
+* **Evaluación menos ruidosa:** la elección del punto de control usaba 8 episodios, donde
+  1 atropello más o menos cambia el orden; la corrida spot evalúa cada 25 episodios con 16.
+* **Por confirmar:** la corrida spot (`infra/terraform`) reparte las semillas en tres
+  grupos —delta 1 / lr 3e-4 (control), delta 10 / lr 3e-4 y delta 10 / lr 1e-4— y los
+  valida en el mismo mundo (40 episodios) junto con s1–s6 y el instructor actual.

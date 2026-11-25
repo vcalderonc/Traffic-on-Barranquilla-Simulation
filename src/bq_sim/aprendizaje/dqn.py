@@ -131,6 +131,9 @@ class HiperDQN:
     n_pasos: int = 3             # retornos de n pasos: el castigo llega antes a la causa
     memoria_incidentes: int = 8_000
     frac_incidentes: float = 0.10  # fracción de cada lote tomada de la memoria de incidentes
+    # Huber: errores TD por encima de delta se recortan. Con delta = 1, el error de un
+    # atropello (~50) empuja igual que uno de 1; la Fase 2 usa un delta mayor (D-37).
+    huber_delta: float = 1.0
 
 
 class AgenteDQN:
@@ -230,10 +233,11 @@ class AgenteDQN:
         y = r + desc * (1.0 - fin) * q2
         filas = np.arange(len(a))
         td = q[filas, a] - y
-        # gradiente de Huber (delta = 1)
+        # gradiente de Huber
+        d = self.hp.huber_delta
         g = np.zeros_like(q)
-        g[filas, a] = np.clip(td, -1.0, 1.0) / len(a)
-        perdida = float(np.mean(np.where(np.abs(td) < 1, 0.5 * td ** 2, np.abs(td) - 0.5)))
+        g[filas, a] = np.clip(td, -d, d) / len(a)
+        perdida = float(np.mean(np.where(np.abs(td) < d, 0.5 * td ** 2, d * (np.abs(td) - 0.5 * d))))
 
         # pérdida de imitación (DQfD): max_a [Q(s,a) + m*(a != a_guia)] - Q(s, a_guia)
         lam = self.hp.peso_imitacion

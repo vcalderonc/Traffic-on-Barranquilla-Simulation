@@ -244,6 +244,8 @@ resource "aws_instance" "entrenador" {
     semilla_inicial = var.semilla_inicial
     episodios       = var.episodios
     evaluar_cada    = var.evaluar_cada
+    episodios_eval  = var.episodios_eval
+    ajustes         = join(" ", var.ajustes)
     validar         = var.episodios_validacion
     minutos_maximos = floor(var.horas_maximas * 60)
   })

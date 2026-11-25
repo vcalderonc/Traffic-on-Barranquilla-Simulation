@@ -10,9 +10,9 @@ output "instancia" {
 
 output "resumen" {
   description = "Qué se lanzó."
-  value = var.lanzar ? format("%s spot · %d semillas (%d..%d) x %d episodios · máximo %s h",
+  value = var.lanzar ? format("%s spot · %d semillas (%d..%d; ajustes %s) x %d episodios · máximo %s h",
     var.tipo_instancia, local.semillas, var.semilla_inicial, var.semilla_inicial + local.semillas - 1,
-  var.episodios, var.horas_maximas) : "sin instancia"
+  join(", ", var.ajustes), var.episodios, var.horas_maximas) : "sin instancia"
 }
 
 output "comandos" {

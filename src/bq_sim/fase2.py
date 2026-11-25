@@ -34,6 +34,12 @@ DIR_SALIDAS = C.DIR_SALIDAS / "fase2"
 REFUERZO = {"peaton": 2.0, "animal": 2.5, "vendedor": 1.5}
 CLIMAS_ENTRENAR = ["despejado", "despejado", "noche", "noche", "lluvia"]
 CLIMAS_EVALUAR = ["noche", "lluvia", "despejado", "noche"]
+# Ajuste del aprendizaje (D-37). En la primera corrida, el error TD de los incidentes
+# llegaba a ~55 y el Huber (delta = 1) lo recortaba a 1: en el lote, un atropello pesaba
+# lo mismo que un error de 1 punto. Con delta = 10 pesa hasta 10 veces más. Se mantiene la
+# tasa de aprendizaje; la corrida spot compara también lr = 1e-4.
+HUBER_DELTA = 10.0
+LR = 3e-4
 
 
 def _opciones(semilla: int, n: int, climas: list[str]):
@@ -68,14 +74,16 @@ def _clave(r: dict) -> tuple:
 
 
 def entrenar_semilla(semilla: int, episodios: int = 300, evaluar_cada: int = 50, episodios_eval: int = 8,
-                     desde: Path | None = None, demostraciones: int = 60) -> dict:
+                     desde: Path | None = None, demostraciones: int = 60,
+                     huber_delta: float = HUBER_DELTA, lr: float = LR) -> dict:
     from .experimentos import MODELO_INSTRUCTOR
 
     desde = Path(desde or MODELO_INSTRUCTOR)
     DIR_MODELOS.mkdir(parents=True, exist_ok=True)
     DIR_SALIDAS.mkdir(parents=True, exist_ok=True)
     maestro, meta = AgenteDQN.cargar(desde)
-    ag = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_inicial=0.15, eps_final=0.02, eps_pasos=40_000), semilla=semilla)
+    ag = AgenteDQN(N_OBS, N_ACC, HiperDQN(eps_inicial=0.15, eps_final=0.02, eps_pasos=40_000,
+                                        huber_delta=huber_delta, lr=lr), semilla=semilla)
     ag.fijar_parametros(maestro.obtener_parametros())  # 28 -> 31 entradas, con ceros
     env = _entorno(semilla)
     reg = Registro(DIR_SALIDAS / f"s{semilla}.csv")

@@ -69,6 +69,9 @@ def main(argv=None) -> None:
     f2.add_argument("--semilla", type=int, default=1)
     f2.add_argument("--episodios", type=int, default=None, help="entrenar: 300; validar: 40")
     f2.add_argument("--evaluar-cada", type=int, default=50)
+    f2.add_argument("--episodios-eval", type=int, default=8, help="entrenar: episodios de cada evaluación intermedia")
+    f2.add_argument("--huber-delta", type=float, default=None, help="entrenar: delta de la pérdida Huber (10)")
+    f2.add_argument("--lr", type=float, default=None, help="entrenar: tasa de aprendizaje (3e-4)")
     f2.add_argument("--instalar", action="store_true", help="elegir: copia el mejor a modelos/instructor_automovil.npz")
     f2.add_argument("--procesos", type=int, default=1, help="validar: candidatos evaluados a la vez (uno por núcleo)")
     a = p.parse_args(argv)
@@ -122,7 +125,8 @@ def main(argv=None) -> None:
     elif a.cmd == "fase2":
         from . import fase2
         if a.accion == "entrenar":
-            fase2.entrenar_semilla(a.semilla, a.episodios or 300, a.evaluar_cada)
+            extra = {k: v for k, v in (("huber_delta", a.huber_delta), ("lr", a.lr)) if v is not None}
+            fase2.entrenar_semilla(a.semilla, a.episodios or 300, a.evaluar_cada, a.episodios_eval, **extra)
         elif a.accion == "validar":
             fase2.validar(a.episodios or 40, procesos=a.procesos)
         else:
