@@ -1,0 +1,30 @@
+#!/bin/bash
+# Arranque de la instancia (cloud-init, como root). Plantilla de Terraform: $${...} = variable de bash.
+set -euo pipefail
+exec > >(tee -a /var/log/entrenamiento.log) 2>&1
+
+BUCKET="${bucket}"
+# Seguro de costos: pase lo que pase, la instancia se apaga (y se termina) a las ${minutos_maximos} min.
+shutdown -h +${minutos_maximos} "bq-sim: tiempo máximo cumplido"
+
+terminar() {
+  codigo=$?
+  echo "$(date) | fin del arranque (código $codigo)"
+  aws s3 cp /var/log/entrenamiento.log "$BUCKET/log_instancia.txt" --only-show-errors || true
+  shutdown -h now
+}
+trap terminar EXIT
+
+echo "$(date) | preparando (${rama})"
+sudo -u ubuntu -H bash -c '
+  set -euo pipefail
+  cd ~
+  git clone --branch "${rama}" "${repo}" Traffic-on-Barranquilla-Simulation
+  bash Traffic-on-Barranquilla-Simulation/scripts/ec2/preparar.sh "${repo}" "${rama}"
+'
+
+echo "$(date) | entrenando"
+sudo -u ubuntu -H env \
+  SEMILLAS=${semillas} SEMILLA_INICIAL=${semilla_inicial} EPISODIOS=${episodios} \
+  EVALUAR_CADA=${evaluar_cada} VALIDAR=${validar} INSTALAR=1 APAGAR=0 BUCKET="$BUCKET" \
+  bash /home/ubuntu/Traffic-on-Barranquilla-Simulation/scripts/ec2/entrenar_fase2.sh

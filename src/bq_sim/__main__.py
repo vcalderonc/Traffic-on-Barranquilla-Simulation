@@ -70,6 +70,7 @@ def main(argv=None) -> None:
     f2.add_argument("--episodios", type=int, default=None, help="entrenar: 300; validar: 40")
     f2.add_argument("--evaluar-cada", type=int, default=50)
     f2.add_argument("--instalar", action="store_true", help="elegir: copia el mejor a modelos/instructor_automovil.npz")
+    f2.add_argument("--procesos", type=int, default=1, help="validar: candidatos evaluados a la vez (uno por núcleo)")
     a = p.parse_args(argv)
 
     if a.cmd == "red":
@@ -123,7 +124,7 @@ def main(argv=None) -> None:
         if a.accion == "entrenar":
             fase2.entrenar_semilla(a.semilla, a.episodios or 300, a.evaluar_cada)
         elif a.accion == "validar":
-            fase2.validar(a.episodios or 40)
+            fase2.validar(a.episodios or 40, procesos=a.procesos)
         else:
             fase2.elegir(a.instalar)
     elif a.cmd == "solapes":

@@ -4,7 +4,7 @@
 # SUMO viene en pip (eclipse-sumo/libsumo): no hace falta compilar ni usar GPU.
 set -euo pipefail
 REPO=${1:-https://github.com/vcalderonc/Traffic-on-Barranquilla-Simulation.git}
-RAMA=${2:-seguridad-peatones}
+RAMA=${2:-main}
 
 sudo apt-get update -y
 sudo apt-get install -y python3-venv python3-pip git tmux htop unzip

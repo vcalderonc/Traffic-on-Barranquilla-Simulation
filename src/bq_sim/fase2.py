@@ -129,24 +129,38 @@ def entrenar_semilla(semilla: int, episodios: int = 300, evaluar_cada: int = 50,
     return out
 
 
-def validar(episodios: int = 40, semilla_mundo: int = 4242, modelos: list[Path] | None = None) -> list[dict]:
-    """Evalúa cada candidato (y el instructor actual) en el MISMO mundo y los mismos escenarios."""
+def _validar_uno(ruta: Path, episodios: int, semilla_mundo: int) -> dict:
+    op = _opciones(semilla_mundo, episodios, CLIMAS_EVALUAR)
+    ag, _ = AgenteDQN.cargar(ruta)
+    env = _entorno(semilla_mundo)
+    try:
+        r = resumir(evaluar(env, ag, episodios, None, "validacion", opciones=op))
+    finally:
+        env.close()
+    r["modelo"] = str(Path(ruta).relative_to(C.RAIZ)) if Path(ruta).is_relative_to(C.RAIZ) else str(ruta)
+    print(r, flush=True)
+    return r
+
+
+def validar(episodios: int = 40, semilla_mundo: int = 4242, modelos: list[Path] | None = None,
+            procesos: int = 1) -> list[dict]:
+    """Evalúa cada candidato (y el instructor actual) en el MISMO mundo y los mismos escenarios.
+
+    Con ``procesos > 1`` evalúa varios candidatos a la vez, uno por proceso (cada proceso
+    tiene su propio SUMO); el resultado es el mismo que en serie.
+    """
     from .experimentos import MODELO_INSTRUCTOR
 
     modelos = modelos or ([MODELO_INSTRUCTOR] + sorted(p for p in DIR_MODELOS.glob("instructor_s*.npz")
                                                         if not p.stem.endswith("_ultimo")))
-    op = _opciones(semilla_mundo, episodios, CLIMAS_EVALUAR)
-    filas = []
-    for ruta in modelos:
-        ag, _ = AgenteDQN.cargar(ruta)
-        env = _entorno(semilla_mundo)
-        try:
-            r = resumir(evaluar(env, ag, episodios, None, "validacion", opciones=op))
-        finally:
-            env.close()
-        r["modelo"] = str(Path(ruta).relative_to(C.RAIZ)) if Path(ruta).is_relative_to(C.RAIZ) else str(ruta)
-        filas.append(r)
-        print(r, flush=True)
+    if procesos > 1 and len(modelos) > 1:
+        import multiprocessing as mp
+        from concurrent.futures import ProcessPoolExecutor
+
+        with ProcessPoolExecutor(min(procesos, len(modelos)), mp_context=mp.get_context("spawn")) as ex:
+            filas = list(ex.map(_validar_uno, modelos, [episodios] * len(modelos), [semilla_mundo] * len(modelos)))
+    else:
+        filas = [_validar_uno(ruta, episodios, semilla_mundo) for ruta in modelos]
     DIR_SALIDAS.mkdir(parents=True, exist_ok=True)
     (DIR_SALIDAS / "validacion.json").write_text(json.dumps(filas, indent=1), encoding="utf-8")
     return filas

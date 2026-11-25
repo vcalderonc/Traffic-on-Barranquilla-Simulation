@@ -24,3 +24,10 @@ sumo/tmp.net.xml.gz
 
 # Archivo temporal que deja randomTrips.py en la raíz
 routes.rou.xml
+
+# Terraform (el estado tiene IDs de la cuenta: no se versiona)
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfvars
+infra/terraform/tfplan
