@@ -217,11 +217,10 @@ resource "aws_instance" "entrenador" {
     market_type = "spot"
     spot_options {
       spot_instance_type             = "one-time"
-      instance_interruption_behavior = "terminate"
+      instance_interruption_behavior = "terminate" # al apagarse (fin, fallo o tiempo máximo) también se termina
       max_price                      = var.precio_maximo
     }
   }
-  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_tokens   = "required" # IMDSv2
