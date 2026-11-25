@@ -48,10 +48,26 @@ def sumo_home() -> Path:
 
 
 def binario(nombre: str) -> str:
-    """Ruta a un ejecutable de SUMO (sumo, sumo-gui, netconvert, duarouter...)."""
+    """Ruta a un ejecutable de SUMO (sumo, sumo-gui, netconvert, duarouter...).
+
+    Busca en SUMO_HOME, en el paquete ``eclipse-sumo`` y en el PATH. SUMO_HOME no basta:
+    el paquete ``libsumo`` lo apunta a ``sumo-data`` (sin ``bin/``) al importarse, aunque
+    después no cargue (p. ej. en Linux sin libGL), y entonces TraCI no encontraba ``sumo``.
+    """
+    import shutil
+
     exe = nombre + (".exe" if os.name == "nt" else "")
-    ruta = sumo_home() / "bin" / exe
-    return str(ruta) if ruta.exists() else nombre
+    candidatos = [sumo_home() / "bin" / exe]
+    try:
+        import sumo  # paquete eclipse-sumo
+
+        candidatos.append(Path(sumo.SUMO_HOME) / "bin" / exe)
+    except (ImportError, AttributeError):
+        pass
+    for ruta in candidatos:
+        if ruta.exists():
+            return str(ruta)
+    return shutil.which(exe) or nombre
 
 
 @dataclass

@@ -76,6 +76,12 @@ fallos=0
 for p in "${pids[@]}"; do wait "$p" || fallos=$((fallos + 1)); done
 kill "$RESPALDO" 2>/dev/null; wait "$RESPALDO" 2>/dev/null
 echo "$(date) | entrenamiento terminado ($fallos semillas con error)"
+if [ "$fallos" -ge "$SEMILLAS" ]; then
+  echo "$(date) | todas las semillas fallaron: no se valida ni se instala nada"
+  [ -n "$VIGIA" ] && kill "$VIGIA" 2>/dev/null
+  subir
+  exit 1
+fi
 subir
 
 $PY -m bq_sim fase2 validar --episodios "$VALIDAR" --procesos "$NUCLEOS" > salidas/fase2/log_validacion.txt 2>&1

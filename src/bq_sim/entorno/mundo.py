@@ -31,8 +31,10 @@ def _traci(gui: bool):
     try:
         import libsumo  # mucho más rápido: SUMO corre dentro del mismo proceso
         return libsumo
-    except ImportError:  # pragma: no cover
+    except ImportError as e:  # pragma: no cover
+        import sys
         import traci
+        print(f"[mundo] libsumo no cargó ({e}); se usa TraCI por socket, mucho más lento", file=sys.stderr)
         return traci
 
 
